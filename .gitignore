@@ -146,3 +146,6 @@ Thumbs.db
 *.temp
 tmp/
 temp/
+
+# Pip artifacts
+=*
