@@ -25,6 +25,10 @@ on:
           - staging
           - prod
 
+# Default permissions for all jobs - minimal by default
+permissions:
+  contents: read
+
 env:
   AWS_REGION: ap-south-1
   PROJECT_NAME: algo-trading
@@ -36,6 +40,8 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -69,6 +75,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write
     
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
@@ -155,6 +164,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    permissions:
+      contents: read
+      id-token: write
     environment:
       name: staging
       url: http://algo-trading-staging-alb.${{ env.AWS_REGION }}.elb.amazonaws.com
@@ -218,6 +230,9 @@ jobs:
     needs: [build, deploy-staging]
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    permissions:
+      contents: read
+      id-token: write
     environment:
       name: production
       url: http://algo-trading-prod-alb.${{ env.AWS_REGION }}.elb.amazonaws.com
@@ -294,6 +309,9 @@ jobs:
     name: Apply Infrastructure Changes
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write
     environment:
       name: ${{ github.event.inputs.environment }}
     
