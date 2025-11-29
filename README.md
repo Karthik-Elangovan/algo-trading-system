@@ -15,7 +15,7 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 
 ## Features
 
-### Phase 1 (Current)
+### Phase 1
 - ✅ Historical data fetcher for options
 - ✅ IV Rank calculator with Black-Scholes model
 - ✅ Premium Selling Strategy (Short Strangle)
@@ -23,10 +23,19 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 - ✅ Comprehensive performance metrics
 - ✅ Transaction cost modeling (Indian markets)
 
+### Phase 2 (Current)
+- ✅ Professional Streamlit trading dashboard
+- ✅ Real-time P&L tracking and visualization
+- ✅ Position monitoring with Greeks exposure
+- ✅ Risk metrics dashboard (VaR, margin, drawdown)
+- ✅ Order entry and management panel
+- ✅ Alert system for strategy signals and risk warnings
+- ✅ Dark/Light theme support
+- ✅ Export functionality (CSV, reports)
+
 ### Future Phases
-- 📋 Phase 2: Additional strategies (Iron Condor, Calendar Spreads)
-- 📋 Phase 3: Angel One broker integration
-- 📋 Phase 4: Streamlit dashboard
+- 📋 Phase 3: Additional strategies (Iron Condor, Calendar Spreads)
+- 📋 Phase 4: Angel One broker integration
 
 ## Installation
 
@@ -93,7 +102,21 @@ algo-trading-system/
 │   │   └── report.py
 │   ├── indicators/        # Technical indicators
 │   │   └── volatility.py
-│   └── ui/                # Dashboard (Phase 4)
+│   └── ui/                # Legacy UI module
+├── dashboard/             # Streamlit Trading Dashboard (Phase 2)
+│   ├── app.py             # Main dashboard application
+│   ├── components/        # UI components
+│   │   ├── sidebar.py     # Sidebar controls
+│   │   ├── charts.py      # P&L and chart components
+│   │   ├── tables.py      # Position and order tables
+│   │   ├── metrics.py     # Risk and market metrics
+│   │   └── alerts.py      # Alert system
+│   ├── utils/             # Utility modules
+│   │   ├── data_handler.py
+│   │   ├── export.py
+│   │   └── theme.py
+│   └── styles/            # Custom CSS
+│       └── custom.css
 ├── config/
 │   └── settings.py        # Configuration
 ├── tests/
@@ -152,6 +175,67 @@ BACKTEST_CONFIG = {
     "stt_rate": 0.0005,
 }
 ```
+
+## Trading Dashboard
+
+The trading dashboard provides a professional web interface for monitoring and managing trades.
+
+### Running the Dashboard
+
+```bash
+# From the project root directory
+streamlit run dashboard/app.py
+```
+
+The dashboard will open in your browser at `http://localhost:8501`.
+
+### Dashboard Features
+
+| Feature | Description |
+|---------|-------------|
+| **P&L Chart** | Real-time profit/loss tracking with daily and cumulative views |
+| **Position Table** | Current positions with Greeks (Delta, Gamma, Theta, Vega) |
+| **Risk Metrics** | VaR, CVaR, margin usage, drawdown monitoring |
+| **Market Data** | Live spot price, IV, IV Rank for NIFTY/BANKNIFTY/SENSEX |
+| **Order Entry** | Quick order form with market/limit orders |
+| **Alert System** | Strategy signals, risk warnings, order confirmations |
+| **Theme Toggle** | Dark/Light mode support |
+| **Export** | Download positions, orders, and P&L reports as CSV |
+
+### Dashboard Layout
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📊 Algo Trading Dashboard                                   │
+├──────────────┬──────────────────────────────────────────────┤
+│  SIDEBAR     │  MAIN AREA                                    │
+│              │                                               │
+│  Strategy    │  [Market Data]    [Capital Overview]          │
+│  Selector    │                                               │
+│              │  ─────────────────────────────────────────── │
+│  Controls    │                                               │
+│  - Start     │  [P&L Chart]                                  │
+│  - Stop      │  [Drawdown Chart]  [Equity Curve]             │
+│  - Pause     │                                               │
+│              │  ─────────────────────────────────────────── │
+│  Theme       │                                               │
+│  Toggle      │  [Position Table with Greeks]                 │
+│              │                                               │
+│  Export      │  ─────────────────────────────────────────── │
+│  - Positions │                                               │
+│  - Orders    │  [Order Log]       [Alerts]                   │
+│  - P&L       │                                               │
+└──────────────┴──────────────────────────────────────────────┘
+```
+
+### Configuration Options
+
+The dashboard can be customized via the sidebar:
+
+- **Strategy Selection**: Choose from available strategies
+- **Parameter Tuning**: Adjust IV threshold, delta range, profit targets
+- **Auto-refresh**: Enable/disable automatic data refresh (30-second default)
+- **Theme**: Toggle between dark and light modes
 
 ## Testing
 
