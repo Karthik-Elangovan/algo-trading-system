@@ -2,18 +2,25 @@
 Broker Configuration Settings.
 
 Configuration for Angel One and paper trading brokers.
+
+SECURITY NOTE: Sensitive credentials should be loaded from environment variables
+or a separate secrets file excluded from version control (e.g., .env file).
+Never commit actual API keys, passwords, or TOTP secrets to the repository.
 """
 
+import os
 from typing import Any, Dict
 
 # Angel One SmartAPI Configuration
-# NOTE: Replace with actual credentials for live trading
+# Credentials are loaded from environment variables for security
+# Set these in your environment or .env file before running live trading
 ANGEL_ONE_CONFIG: Dict[str, Any] = {
     # API credentials (from Angel One developer portal)
-    "api_key": "",  # Your API key from SmartAPI
-    "client_id": "",  # Your trading account client ID
-    "password": "",  # Your trading account password
-    "totp_secret": "",  # TOTP secret for 2FA (from authenticator setup)
+    # Load from environment variables to avoid committing secrets
+    "api_key": os.environ.get("ANGEL_ONE_API_KEY", ""),
+    "client_id": os.environ.get("ANGEL_ONE_CLIENT_ID", ""),
+    "password": os.environ.get("ANGEL_ONE_PASSWORD", ""),
+    "totp_secret": os.environ.get("ANGEL_ONE_TOTP_SECRET", ""),
     
     # Auto-generated tokens (set after login)
     "feed_token": None,

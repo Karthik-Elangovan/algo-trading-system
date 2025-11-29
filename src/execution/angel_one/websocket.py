@@ -4,7 +4,6 @@ Angel One WebSocket Handler.
 Handles real-time market data streaming via WebSocket.
 """
 
-import json
 import logging
 import threading
 import time
@@ -62,6 +61,7 @@ class AngelOneWebSocket:
         self._reconnect_attempts = 0
         self._max_reconnect_attempts = 5
         self._reconnect_delay = 5  # seconds
+        self._connection_event = threading.Event()
         
         # Data storage
         self._ltp_data: Dict[str, float] = {}
@@ -98,6 +98,9 @@ class AngelOneWebSocket:
             self._smart_api_ws.on_error = self._on_error
             self._smart_api_ws.on_close = self._on_close
             
+            # Clear connection event before connecting
+            self._connection_event.clear()
+            
             # Connect in a separate thread
             self._ws_thread = threading.Thread(
                 target=self._smart_api_ws.connect,
@@ -105,13 +108,10 @@ class AngelOneWebSocket:
             )
             self._ws_thread.start()
             
-            # Wait for connection
-            timeout = 10
-            start_time = time.time()
-            while not self._is_connected and (time.time() - start_time) < timeout:
-                time.sleep(0.1)
+            # Wait for connection using event instead of busy-waiting
+            connected = self._connection_event.wait(timeout=10)
             
-            return self._is_connected
+            return connected and self._is_connected
             
         except ImportError:
             logger.error("SmartApi package not installed")
@@ -303,6 +303,7 @@ class AngelOneWebSocket:
         """Handle WebSocket connection opened."""
         self._is_connected = True
         self._reconnect_attempts = 0
+        self._connection_event.set()  # Signal successful connection
         logger.info("WebSocket connected")
         
         if 'connect' in self._callbacks:
@@ -372,6 +373,7 @@ class AngelOneWebSocket:
     def _on_close(self, ws, close_status_code, close_msg) -> None:
         """Handle WebSocket connection closed."""
         self._is_connected = False
+        self._connection_event.clear()
         logger.info(f"WebSocket closed: {close_status_code} - {close_msg}")
         
         if 'disconnect' in self._callbacks:
@@ -380,12 +382,18 @@ class AngelOneWebSocket:
             except Exception as e:
                 logger.exception(f"Disconnect callback exception: {e}")
         
-        # Attempt reconnection
+        # Attempt reconnection in a separate thread to avoid blocking
         if self._reconnect_attempts < self._max_reconnect_attempts:
             self._reconnect_attempts += 1
-            logger.info(f"Attempting reconnection ({self._reconnect_attempts}/{self._max_reconnect_attempts})")
-            time.sleep(self._reconnect_delay)
-            self.connect()
+            logger.info(f"Scheduling reconnection ({self._reconnect_attempts}/{self._max_reconnect_attempts})")
+            
+            def delayed_reconnect():
+                time.sleep(self._reconnect_delay)
+                if not self._is_connected:
+                    self.connect()
+            
+            reconnect_thread = threading.Thread(target=delayed_reconnect, daemon=True)
+            reconnect_thread.start()
     
     def get_subscribed_count(self) -> int:
         """Get count of subscribed tokens."""
