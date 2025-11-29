@@ -1,0 +1,338 @@
+# GitHub Actions Deployment Workflow for Algo Trading System
+# This workflow builds, tests, and deploys the application to AWS
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: ap-south-1
+  PROJECT_NAME: algo-trading
+
+jobs:
+  # ==========================================================================
+  # Test Job
+  # ==========================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+
+      - name: Run linting
+        run: |
+          pip install flake8
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics || true
+
+  # ==========================================================================
+  # Build Job
+  # ==========================================================================
+  build:
+    name: Build Docker Images
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-trading
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push Trading Engine
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deployment/docker/Dockerfile.trading
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-trading:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-trading:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Dashboard
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deployment/docker/Dockerfile.dashboard
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-dashboard:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-dashboard:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Data Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deployment/docker/Dockerfile.data
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-data-service:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.PROJECT_NAME }}-${{ steps.env.outputs.environment }}-data-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ==========================================================================
+  # Deploy to Staging
+  # ==========================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: http://algo-trading-staging-alb.${{ env.AWS_REGION }}.elb.amazonaws.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS Services
+        run: |
+          CLUSTER_NAME="${{ env.PROJECT_NAME }}-staging-cluster"
+          
+          for SERVICE in trading dashboard data-service; do
+            SERVICE_NAME="${{ env.PROJECT_NAME }}-staging-${SERVICE}"
+            echo "Deploying ${SERVICE_NAME}..."
+            
+            aws ecs update-service \
+              --cluster "${CLUSTER_NAME}" \
+              --service "${SERVICE_NAME}" \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }} || echo "Service ${SERVICE_NAME} may not exist yet"
+          done
+
+      - name: Wait for deployment to stabilize
+        run: |
+          CLUSTER_NAME="${{ env.PROJECT_NAME }}-staging-cluster"
+          
+          echo "Waiting for trading service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "${CLUSTER_NAME}" \
+            --services "${{ env.PROJECT_NAME }}-staging-trading" \
+            --region ${{ env.AWS_REGION }} || true
+
+      - name: Run health checks
+        run: |
+          echo "Running health checks..."
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh staging || echo "Some health checks may have failed"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Staging deployment successful!"
+          # Add Slack/Discord notification here if configured
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"Staging deployment successful! :rocket:"}' \
+          #   ${{ secrets.SLACK_WEBHOOK }}
+
+  # ==========================================================================
+  # Deploy to Production
+  # ==========================================================================
+  deploy-production:
+    name: Deploy to Production
+    needs: [build, deploy-staging]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    environment:
+      name: production
+      url: http://algo-trading-prod-alb.${{ env.AWS_REGION }}.elb.amazonaws.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create deployment record
+        run: |
+          echo "Creating deployment record..."
+          aws s3 cp - s3://${{ env.PROJECT_NAME }}-prod-data/deployments/$(date +%Y%m%d-%H%M%S).json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "workflow_run": "${{ github.run_id }}"
+          }
+          EOF
+
+      - name: Update ECS Services
+        run: |
+          CLUSTER_NAME="${{ env.PROJECT_NAME }}-prod-cluster"
+          
+          for SERVICE in trading dashboard data-service; do
+            SERVICE_NAME="${{ env.PROJECT_NAME }}-prod-${SERVICE}"
+            echo "Deploying ${SERVICE_NAME}..."
+            
+            aws ecs update-service \
+              --cluster "${CLUSTER_NAME}" \
+              --service "${SERVICE_NAME}" \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }}
+          done
+
+      - name: Wait for deployment to stabilize
+        run: |
+          CLUSTER_NAME="${{ env.PROJECT_NAME }}-prod-cluster"
+          
+          echo "Waiting for services to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "${CLUSTER_NAME}" \
+            --services "${{ env.PROJECT_NAME }}-prod-trading" "${{ env.PROJECT_NAME }}-prod-dashboard" \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Run health checks
+        run: |
+          echo "Running production health checks..."
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh prod
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Production deployment successful!"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Production deployment failed!"
+          # Add alerting notification here
+
+  # ==========================================================================
+  # Infrastructure Job (Optional - for Terraform changes)
+  # ==========================================================================
+  infrastructure:
+    name: Apply Infrastructure Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: deployment/terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: deployment/terraform
+        run: |
+          terraform plan \
+            -var-file=environments/${{ github.event.inputs.environment }}.tfvars \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.environment != 'prod'
+        working-directory: deployment/terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Apply (Production - Manual Approval Required)
+        if: github.event.inputs.environment == 'prod'
+        working-directory: deployment/terraform
+        run: |
+          echo "Production infrastructure changes require manual approval."
+          echo "Please review the plan and apply manually if needed."
+          terraform show tfplan

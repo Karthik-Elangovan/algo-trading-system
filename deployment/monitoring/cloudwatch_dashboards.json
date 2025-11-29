@@ -1,0 +1,360 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Algo Trading System Dashboard\n**Environment:** ${environment} | **Region:** ${region}"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 1,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Service Health"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS CPU Utilization",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "${trading_service}", "ClusterName", "${cluster_name}", {"label": "Trading Engine"}],
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "${dashboard_service}", "ClusterName", "${cluster_name}", {"label": "Dashboard"}],
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "${data_service}", "ClusterName", "${cluster_name}", {"label": "Data Service"}]
+        ],
+        "region": "${region}",
+        "period": 60,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100,
+            "label": "Percent",
+            "showUnits": false
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "color": "#ff0000",
+              "label": "Critical",
+              "value": 80
+            },
+            {
+              "color": "#ffaa00",
+              "label": "Warning",
+              "value": 60
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS Memory Utilization",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "${trading_service}", "ClusterName", "${cluster_name}", {"label": "Trading Engine"}],
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "${dashboard_service}", "ClusterName", "${cluster_name}", {"label": "Dashboard"}],
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "${data_service}", "ClusterName", "${cluster_name}", {"label": "Data Service"}]
+        ],
+        "region": "${region}",
+        "period": 60,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100,
+            "label": "Percent",
+            "showUnits": false
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "color": "#ff0000",
+              "label": "Critical",
+              "value": 80
+            },
+            {
+              "color": "#ffaa00",
+              "label": "Warning",
+              "value": 60
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS Task Count",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "${trading_service}", "ClusterName", "${cluster_name}", {"label": "Trading Engine"}],
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "${dashboard_service}", "ClusterName", "${cluster_name}", {"label": "Dashboard"}],
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "${data_service}", "ClusterName", "${cluster_name}", {"label": "Data Service"}]
+        ],
+        "region": "${region}",
+        "period": 60
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 8,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Application Load Balancer"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 9,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ALB Request Count",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${alb_name}", {"label": "Requests", "stat": "Sum"}]
+        ],
+        "region": "${region}",
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 9,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ALB Response Time",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${alb_name}", {"label": "Avg Response Time", "stat": "Average"}],
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${alb_name}", {"label": "P99 Response Time", "stat": "p99"}]
+        ],
+        "region": "${region}",
+        "period": 60,
+        "yAxis": {
+          "left": {
+            "label": "Seconds",
+            "showUnits": false
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 9,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ALB HTTP Errors",
+        "view": "timeSeries",
+        "stacked": true,
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "${alb_name}", {"label": "4XX Errors", "stat": "Sum"}],
+          ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "${alb_name}", {"label": "5XX Errors", "stat": "Sum"}]
+        ],
+        "region": "${region}",
+        "period": 60
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 15,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Database (RDS)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 16,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS CPU Utilization",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${db_instance}", {"label": "CPU %"}]
+        ],
+        "region": "${region}",
+        "period": 60,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "color": "#ff0000",
+              "label": "Critical",
+              "value": 80
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 16,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Database Connections",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "${db_instance}", {"label": "Connections"}]
+        ],
+        "region": "${region}",
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 16,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Free Storage Space",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", "${db_instance}", {"label": "Free Space (GB)"}]
+        ],
+        "region": "${region}",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "label": "GB",
+            "showUnits": false
+          }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 22,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Application Logs"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 23,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "title": "Application Errors (Last 1 hour)",
+        "query": "SOURCE '${log_group}' | fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 50",
+        "region": "${region}",
+        "view": "table"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 29,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "## Trading Metrics (Custom)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Trades Executed",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AlgoTrading", "TradesExecuted", "Environment", "${environment}", {"label": "Trades", "stat": "Sum"}]
+        ],
+        "region": "${region}",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Realized P&L",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AlgoTrading", "RealizedPnL", "Environment", "${environment}", {"label": "P&L (INR)", "stat": "Sum"}]
+        ],
+        "region": "${region}",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Active Positions",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AlgoTrading", "ActivePositions", "Environment", "${environment}", {"label": "Positions", "stat": "Average"}]
+        ],
+        "region": "${region}",
+        "period": 60
+      }
+    }
+  ]
+}

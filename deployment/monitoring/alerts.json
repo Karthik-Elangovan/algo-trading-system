@@ -1,0 +1,251 @@
+{
+  "alerts": [
+    {
+      "name": "high-cpu-utilization",
+      "description": "Alert when ECS service CPU utilization exceeds 80%",
+      "namespace": "AWS/ECS",
+      "metric_name": "CPUUtilization",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 80,
+      "period": 300,
+      "evaluation_periods": 2,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "ClusterName": "${cluster_name}",
+        "ServiceName": "${trading_service}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "critical"
+    },
+    {
+      "name": "high-memory-utilization",
+      "description": "Alert when ECS service memory utilization exceeds 80%",
+      "namespace": "AWS/ECS",
+      "metric_name": "MemoryUtilization",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 80,
+      "period": 300,
+      "evaluation_periods": 2,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "ClusterName": "${cluster_name}",
+        "ServiceName": "${trading_service}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "critical"
+    },
+    {
+      "name": "trading-service-unhealthy",
+      "description": "Alert when trading service has no running tasks",
+      "namespace": "ECS/ContainerInsights",
+      "metric_name": "RunningTaskCount",
+      "statistic": "Average",
+      "comparison_operator": "LessThanThreshold",
+      "threshold": 1,
+      "period": 60,
+      "evaluation_periods": 2,
+      "treat_missing_data": "breaching",
+      "dimensions": {
+        "ClusterName": "${cluster_name}",
+        "ServiceName": "${trading_service}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "critical"
+    },
+    {
+      "name": "dashboard-service-unhealthy",
+      "description": "Alert when dashboard service has no running tasks",
+      "namespace": "ECS/ContainerInsights",
+      "metric_name": "RunningTaskCount",
+      "statistic": "Average",
+      "comparison_operator": "LessThanThreshold",
+      "threshold": 1,
+      "period": 60,
+      "evaluation_periods": 3,
+      "treat_missing_data": "breaching",
+      "dimensions": {
+        "ClusterName": "${cluster_name}",
+        "ServiceName": "${dashboard_service}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "alb-5xx-errors",
+      "description": "Alert when ALB returns high number of 5XX errors",
+      "namespace": "AWS/ApplicationELB",
+      "metric_name": "HTTPCode_Target_5XX_Count",
+      "statistic": "Sum",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 10,
+      "period": 300,
+      "evaluation_periods": 2,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "LoadBalancer": "${alb_name}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "alb-high-latency",
+      "description": "Alert when ALB response time exceeds 2 seconds",
+      "namespace": "AWS/ApplicationELB",
+      "metric_name": "TargetResponseTime",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 2,
+      "period": 300,
+      "evaluation_periods": 3,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "LoadBalancer": "${alb_name}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "medium"
+    },
+    {
+      "name": "alb-unhealthy-targets",
+      "description": "Alert when ALB has unhealthy targets",
+      "namespace": "AWS/ApplicationELB",
+      "metric_name": "UnHealthyHostCount",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 0,
+      "period": 60,
+      "evaluation_periods": 2,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "LoadBalancer": "${alb_name}",
+        "TargetGroup": "${target_group}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "rds-high-cpu",
+      "description": "Alert when RDS CPU utilization exceeds 80%",
+      "namespace": "AWS/RDS",
+      "metric_name": "CPUUtilization",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 80,
+      "period": 300,
+      "evaluation_periods": 3,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "DBInstanceIdentifier": "${db_instance}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "ok_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "rds-low-storage",
+      "description": "Alert when RDS free storage space is below 5GB",
+      "namespace": "AWS/RDS",
+      "metric_name": "FreeStorageSpace",
+      "statistic": "Average",
+      "comparison_operator": "LessThanThreshold",
+      "threshold": 5368709120,
+      "period": 300,
+      "evaluation_periods": 2,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "DBInstanceIdentifier": "${db_instance}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "critical"
+    },
+    {
+      "name": "rds-high-connections",
+      "description": "Alert when RDS connections exceed 80% of max",
+      "namespace": "AWS/RDS",
+      "metric_name": "DatabaseConnections",
+      "statistic": "Average",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 80,
+      "period": 300,
+      "evaluation_periods": 3,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "DBInstanceIdentifier": "${db_instance}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "trading-daily-loss-limit",
+      "description": "Alert when daily trading loss exceeds limit",
+      "namespace": "AlgoTrading",
+      "metric_name": "DailyLoss",
+      "statistic": "Sum",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 50000,
+      "period": 86400,
+      "evaluation_periods": 1,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "Environment": "${environment}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "critical"
+    },
+    {
+      "name": "trading-execution-failures",
+      "description": "Alert when trade execution failures occur",
+      "namespace": "AlgoTrading",
+      "metric_name": "ExecutionFailures",
+      "statistic": "Sum",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 3,
+      "period": 300,
+      "evaluation_periods": 1,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "Environment": "${environment}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    },
+    {
+      "name": "api-rate-limit",
+      "description": "Alert when broker API rate limit is approaching",
+      "namespace": "AlgoTrading",
+      "metric_name": "APIRequestCount",
+      "statistic": "Sum",
+      "comparison_operator": "GreaterThanThreshold",
+      "threshold": 900,
+      "period": 60,
+      "evaluation_periods": 1,
+      "treat_missing_data": "notBreaching",
+      "dimensions": {
+        "Environment": "${environment}"
+      },
+      "alarm_actions": ["${sns_topic_arn}"],
+      "severity": "high"
+    }
+  ],
+  "notification_templates": {
+    "critical": {
+      "subject": "[CRITICAL] Algo Trading Alert - ${alarm_name}",
+      "message": "CRITICAL ALERT\n\nAlarm: ${alarm_name}\nDescription: ${alarm_description}\nEnvironment: ${environment}\nTime: ${timestamp}\n\nCurrent Value: ${metric_value}\nThreshold: ${threshold}\n\nPlease investigate immediately."
+    },
+    "high": {
+      "subject": "[HIGH] Algo Trading Alert - ${alarm_name}",
+      "message": "HIGH PRIORITY ALERT\n\nAlarm: ${alarm_name}\nDescription: ${alarm_description}\nEnvironment: ${environment}\nTime: ${timestamp}\n\nCurrent Value: ${metric_value}\nThreshold: ${threshold}\n\nPlease investigate."
+    },
+    "medium": {
+      "subject": "[MEDIUM] Algo Trading Alert - ${alarm_name}",
+      "message": "MEDIUM PRIORITY ALERT\n\nAlarm: ${alarm_name}\nDescription: ${alarm_description}\nEnvironment: ${environment}\nTime: ${timestamp}\n\nCurrent Value: ${metric_value}\nThreshold: ${threshold}"
+    }
+  }
+}

@@ -146,3 +146,20 @@ Thumbs.db
 *.temp
 tmp/
 temp/
+
+# Terraform
+deployment/terraform/.terraform/
+deployment/terraform/.terraform.lock.hcl
+deployment/terraform/*.tfstate
+deployment/terraform/*.tfstate.backup
+deployment/terraform/*.tfplan
+deployment/terraform/tfplan
+*.tfstate
+*.tfstate.*
+
+# Docker
+*.tar
+
+# AWS credentials (never commit these)
+.aws/
+credentials
