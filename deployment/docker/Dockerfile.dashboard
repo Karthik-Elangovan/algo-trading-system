@@ -48,24 +48,23 @@ RUN mkdir -p /app/data /app/logs && \
     chown -R dashboard:dashboard /app/data /app/logs
 
 # Streamlit configuration
-RUN mkdir -p /app/.streamlit
-COPY --chown=dashboard:dashboard <<EOF /app/.streamlit/config.toml
-[server]
-port = 8501
-address = "0.0.0.0"
-headless = true
-enableCORS = false
-enableXsrfProtection = true
-
-[browser]
-gatherUsageStats = false
-
-[theme]
-primaryColor = "#1E88E5"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
-EOF
+RUN mkdir -p /app/.streamlit && \
+    echo '[server]' > /app/.streamlit/config.toml && \
+    echo 'port = 8501' >> /app/.streamlit/config.toml && \
+    echo 'address = "0.0.0.0"' >> /app/.streamlit/config.toml && \
+    echo 'headless = true' >> /app/.streamlit/config.toml && \
+    echo 'enableCORS = false' >> /app/.streamlit/config.toml && \
+    echo 'enableXsrfProtection = true' >> /app/.streamlit/config.toml && \
+    echo '' >> /app/.streamlit/config.toml && \
+    echo '[browser]' >> /app/.streamlit/config.toml && \
+    echo 'gatherUsageStats = false' >> /app/.streamlit/config.toml && \
+    echo '' >> /app/.streamlit/config.toml && \
+    echo '[theme]' >> /app/.streamlit/config.toml && \
+    echo 'primaryColor = "#1E88E5"' >> /app/.streamlit/config.toml && \
+    echo 'backgroundColor = "#FFFFFF"' >> /app/.streamlit/config.toml && \
+    echo 'secondaryBackgroundColor = "#F0F2F6"' >> /app/.streamlit/config.toml && \
+    echo 'textColor = "#262730"' >> /app/.streamlit/config.toml && \
+    chown -R dashboard:dashboard /app/.streamlit
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \

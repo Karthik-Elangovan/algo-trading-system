@@ -216,6 +216,8 @@ check_dashboard_endpoint() {
         return
     fi
     
+    # Note: Using HTTP for initial health checks. Configure HTTPS with SSL/TLS
+    # certificates for production by updating ALB listener and using HTTPS here.
     local http_code=$(curl -s -o /dev/null -w "%{http_code}" \
         --connect-timeout "$TIMEOUT" \
         "http://${alb_dns}/_stcore/health" 2>/dev/null || echo "000")
