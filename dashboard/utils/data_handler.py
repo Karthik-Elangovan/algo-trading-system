@@ -24,6 +24,11 @@ from src.backtesting.metrics import calculate_var, calculate_cvar
 from config.settings import PREMIUM_SELLING_CONFIG, RISK_CONFIG, INSTRUMENT_CONFIG
 
 
+# Configuration constants for demo data generation
+PRICE_NOISE_FACTOR = 0.001  # Noise factor for simulating price movements
+DEMO_RANDOM_SEED = 42  # Random seed for reproducible demo data
+
+
 @dataclass
 class MarketData:
     """
@@ -163,7 +168,7 @@ class DashboardDataHandler:
     
     def _initialize_sample_data(self) -> None:
         """Initialize sample data for demonstration."""
-        np.random.seed(42)
+        np.random.seed(DEMO_RANDOM_SEED)
         
         # Generate sample P&L history
         dates = pd.date_range(end=datetime.now(), periods=60, freq='D')
@@ -294,7 +299,7 @@ class DashboardDataHandler:
         base_price = base_prices.get(underlying, 19250)
         
         # Add some randomness to simulate live data
-        noise = np.random.normal(0, base_price * 0.001)
+        noise = np.random.normal(0, base_price * PRICE_NOISE_FACTOR)
         current_price = base_price + noise
         
         # Generate other market data

@@ -390,8 +390,8 @@ def generate_sample_alerts(alert_manager: AlertManager) -> None:
         },
     ]
     
-    # Only add if no alerts exist
-    if not st.session_state.get("alerts"):
+    # Only add if alerts have not been initialized
+    if "alerts" not in st.session_state:
         for alert_data in sample_alerts:
             alert_manager.add_alert(
                 message=alert_data["message"],

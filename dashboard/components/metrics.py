@@ -14,6 +14,14 @@ from datetime import datetime
 from ..utils.theme import ThemeManager
 
 
+# Configuration constants
+DELTA_EXPOSURE_THRESHOLD = 0.5  # Delta exposure above this triggers warning color
+MARGIN_WARNING_THRESHOLD = 60  # Margin % above this shows yellow warning
+MARGIN_DANGER_THRESHOLD = 80  # Margin % above this shows red warning
+DRAWDOWN_WARNING_THRESHOLD = 5  # Drawdown % above this shows indicator
+DRAWDOWN_DANGER_THRESHOLD = 10  # Drawdown % above this shows warning color
+
+
 def render_risk_metrics(risk_metrics: Any) -> None:
     """
     Render a risk metrics display panel.
@@ -38,7 +46,7 @@ def render_risk_metrics(risk_metrics: Any) -> None:
     
     with col2:
         margin = risk_metrics.margin_used if hasattr(risk_metrics, 'margin_used') else risk_metrics.get('margin_used', 0)
-        delta = "⚠️" if margin > 80 else ("🟡" if margin > 60 else "✅")
+        delta = "⚠️" if margin > MARGIN_DANGER_THRESHOLD else ("🟡" if margin > MARGIN_WARNING_THRESHOLD else "✅")
         st.metric(
             "Margin Used",
             f"{margin:.1f}%",
@@ -57,11 +65,11 @@ def render_risk_metrics(risk_metrics: Any) -> None:
     
     with col4:
         drawdown = risk_metrics.drawdown if hasattr(risk_metrics, 'drawdown') else risk_metrics.get('drawdown', 0)
-        dd_color = colors["loss_color"] if drawdown > 10 else colors["text"]
+        dd_color = colors["loss_color"] if drawdown > DRAWDOWN_DANGER_THRESHOLD else colors["text"]
         st.metric(
             "Drawdown",
             f"{drawdown:.1f}%",
-            delta=f"{'↓' if drawdown > 5 else ''}",
+            delta=f"{'↓' if drawdown > DRAWDOWN_WARNING_THRESHOLD else ''}",
             delta_color="inverse",
             help="Current drawdown from peak"
         )
@@ -108,7 +116,7 @@ def render_risk_metrics(risk_metrics: Any) -> None:
     
     with col1:
         delta = risk_metrics.delta_exposure if hasattr(risk_metrics, 'delta_exposure') else risk_metrics.get('delta_exposure', 0)
-        delta_color = colors["profit_color"] if abs(delta) < 0.5 else colors["warning"]
+        delta_color = colors["profit_color"] if abs(delta) < DELTA_EXPOSURE_THRESHOLD else colors["warning"]
         st.metric("Delta", f"{delta:,.4f}", help="Net delta exposure")
     
     with col2:

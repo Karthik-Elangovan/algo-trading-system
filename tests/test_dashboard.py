@@ -79,7 +79,7 @@ class TestDashboardDataHandler:
         
         assert isinstance(risk, RiskMetrics)
         assert risk.var_95 >= 0
-        assert risk.var_99 >= risk.var_95  # 99% VaR should be >= 95% VaR
+        assert risk.var_99 >= risk.var_95  # 99% VaR is more extreme, so should be >= 95% VaR
         assert 0 <= risk.margin_used <= 100
         assert risk.drawdown >= 0
     

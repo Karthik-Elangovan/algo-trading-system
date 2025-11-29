@@ -453,15 +453,25 @@ def render_mini_sparkline(
     
     Args:
         data: Series of values
-        color: Line color
+        color: Line color (hex format, e.g. '#ff4b4b')
         width: Chart width in pixels
         height: Chart height in pixels
     
     Returns:
         HTML string for the sparkline
     """
+    import re
+    
     if data.empty:
         return ""
+    
+    # Sanitize color input - only allow valid hex colors
+    if not re.match(r'^#[0-9A-Fa-f]{6}$', color):
+        color = "#ff4b4b"  # Default to red if invalid
+    
+    # Sanitize numeric inputs
+    width = max(10, min(int(width), 1000))
+    height = max(10, min(int(height), 500))
     
     # Normalize data to fit in the height
     min_val = data.min()
