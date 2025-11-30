@@ -8,10 +8,11 @@ Integrates with the existing Phase 1 data modules and trading logic.
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Tuple, Callable
 from dataclasses import dataclass, field
 import sys
 from pathlib import Path
+import logging
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -22,6 +23,8 @@ from src.strategies.premium_selling import StranglePosition, PremiumSellingStrat
 from src.indicators.volatility import IVRankCalculator, VolatilityIndicators
 from src.backtesting.metrics import calculate_var, calculate_cvar
 from config.settings import PREMIUM_SELLING_CONFIG, RISK_CONFIG, INSTRUMENT_CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 # Configuration constants for demo data generation
@@ -140,12 +143,19 @@ class DashboardDataHandler:
         strategy: Current trading strategy instance
     """
     
-    def __init__(self, initial_capital: float = 1_000_000):
+    def __init__(
+        self,
+        initial_capital: float = 1_000_000,
+        use_realtime: bool = False,
+        realtime_config: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize the data handler.
         
         Args:
             initial_capital: Initial trading capital
+            use_realtime: Whether to use real-time data
+            realtime_config: Optional configuration for real-time data
         """
         self.data_fetcher = HistoricalDataFetcher()
         self.iv_calculator = IVRankCalculator()
@@ -163,8 +173,148 @@ class DashboardDataHandler:
         self._order_history: List[Dict[str, Any]] = []
         self._positions: List[PositionData] = []
         
+        # Real-time data support
+        self._use_realtime = use_realtime
+        self._realtime_manager = None
+        self._realtime_aggregator = None
+        self._realtime_callbacks: List[Callable] = []
+        self._realtime_config = realtime_config or {}
+        
         # Initialize with sample data
         self._initialize_sample_data()
+        
+        # Initialize real-time if requested
+        if use_realtime:
+            self._initialize_realtime()
+    
+    def _initialize_realtime(self) -> None:
+        """Initialize real-time data components."""
+        try:
+            from src.data.realtime_data import RealTimeDataManager
+            from src.data.realtime_aggregator import RealTimeAggregator
+            from src.data.providers import MockDataProvider
+            from config.realtime_settings import MOCK_PROVIDER_CONFIG, REALTIME_CONFIG
+            
+            # Merge configs
+            provider_config = {**MOCK_PROVIDER_CONFIG, **self._realtime_config.get('provider', {})}
+            manager_config = {**REALTIME_CONFIG, **self._realtime_config.get('manager', {})}
+            
+            # Create provider (default to mock for dashboard)
+            provider = MockDataProvider(config=provider_config)
+            
+            # Create manager
+            self._realtime_manager = RealTimeDataManager(
+                provider=provider,
+                config=manager_config
+            )
+            
+            # Create aggregator
+            intervals = manager_config.get('aggregation_intervals', ['1m', '5m', '15m'])
+            self._realtime_aggregator = RealTimeAggregator(intervals=intervals)
+            
+            # Register aggregator as tick callback
+            self._realtime_manager.register_callback(
+                'tick',
+                self._realtime_aggregator.on_tick
+            )
+            
+            logger.info("Real-time data components initialized")
+            
+        except ImportError as e:
+            logger.warning(f"Could not initialize real-time data: {e}")
+            self._use_realtime = False
+        except Exception as e:
+            logger.exception(f"Error initializing real-time data: {e}")
+            self._use_realtime = False
+    
+    def start_realtime(self, symbols: Optional[List[str]] = None) -> bool:
+        """
+        Start real-time data streaming.
+        
+        Args:
+            symbols: List of symbols to subscribe (default: ['NIFTY', 'BANKNIFTY'])
+            
+        Returns:
+            True if started successfully
+        """
+        if not self._use_realtime or not self._realtime_manager:
+            logger.warning("Real-time data not enabled")
+            return False
+        
+        if self._realtime_manager.is_running:
+            return True
+        
+        result = self._realtime_manager.start()
+        
+        if result:
+            symbols = symbols or ['NIFTY', 'BANKNIFTY']
+            self._realtime_manager.subscribe(symbols, mode='quote')
+            logger.info(f"Started real-time data for {symbols}")
+        
+        return result
+    
+    def stop_realtime(self) -> bool:
+        """
+        Stop real-time data streaming.
+        
+        Returns:
+            True if stopped successfully
+        """
+        if not self._realtime_manager:
+            return True
+        
+        return self._realtime_manager.stop()
+    
+    def register_realtime_callback(self, callback: Callable) -> None:
+        """
+        Register a callback for real-time price updates.
+        
+        Args:
+            callback: Callable that receives tick data
+        """
+        if self._realtime_manager:
+            self._realtime_manager.register_callback('tick', callback)
+            self._realtime_callbacks.append(callback)
+    
+    def get_realtime_ltp(self, symbol: str) -> Optional[float]:
+        """
+        Get real-time LTP for a symbol.
+        
+        Args:
+            symbol: Symbol name
+            
+        Returns:
+            LTP value or None
+        """
+        if self._realtime_manager and self._realtime_manager.is_running:
+            return self._realtime_manager.get_ltp(symbol)
+        return None
+    
+    def get_realtime_candles(
+        self,
+        symbol: str,
+        interval: str = '1m',
+        count: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Get real-time candles for a symbol.
+        
+        Args:
+            symbol: Symbol name
+            interval: Candle interval
+            count: Number of candles
+            
+        Returns:
+            List of candle dictionaries
+        """
+        if self._realtime_aggregator:
+            return self._realtime_aggregator.get_candles(symbol, interval, count)
+        return []
+    
+    @property
+    def is_realtime_active(self) -> bool:
+        """Check if real-time data is active."""
+        return self._realtime_manager is not None and self._realtime_manager.is_running
     
     def _initialize_sample_data(self) -> None:
         """Initialize sample data for demonstration."""
@@ -289,7 +439,25 @@ class DashboardDataHandler:
         Returns:
             MarketData object with current market data
         """
-        # Base prices for different underlyings
+        # Try real-time data first
+        if self._use_realtime and self._realtime_manager and self._realtime_manager.is_running:
+            realtime_ltp = self._realtime_manager.get_ltp(underlying)
+            realtime_quote = self._realtime_manager.get_quote(underlying)
+            
+            if realtime_ltp is not None:
+                quote = realtime_quote or {}
+                return MarketData(
+                    spot_price=round(realtime_ltp, 2),
+                    iv=round(np.random.uniform(0.12, 0.22), 4),  # IV still simulated
+                    iv_rank=round(np.random.uniform(40, 85), 1),  # IV rank still simulated
+                    bid=round(quote.get('ltp', realtime_ltp) - np.random.uniform(0.5, 2), 2),
+                    ask=round(quote.get('ltp', realtime_ltp) + np.random.uniform(0.5, 2), 2),
+                    change=round(quote.get('change_pct', np.random.uniform(-1.5, 1.5)), 2),
+                    volume=quote.get('volume', np.random.randint(10000, 100000)),
+                    timestamp=datetime.now(),
+                )
+        
+        # Fall back to simulated data
         base_prices = {
             "NIFTY": 19250,
             "BANKNIFTY": 43500,
