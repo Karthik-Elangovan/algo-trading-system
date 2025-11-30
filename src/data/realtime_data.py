@@ -327,9 +327,9 @@ class RealTimeDataManager:
         
         # Apply throttling
         with self._lock:
-            last_time = self._last_tick_time.get(token, 0)
+            last_time = self._last_tick_time.get(token, 0.0)
             
-            if current_time - last_time < self._tick_throttle_ms:
+            if last_time > 0 and current_time - last_time < self._tick_throttle_ms:
                 return  # Skip this tick due to throttling
             
             self._last_tick_time[token] = current_time

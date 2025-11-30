@@ -109,6 +109,7 @@ class RealTimeAggregator:
             try:
                 timestamp = datetime.fromisoformat(timestamp)
             except (ValueError, TypeError):
+                logger.debug(f"Could not parse timestamp '{timestamp}', using current time")
                 timestamp = datetime.now()
         elif timestamp is None:
             timestamp = datetime.now()

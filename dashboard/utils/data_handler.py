@@ -446,10 +446,13 @@ class DashboardDataHandler:
             
             if realtime_ltp is not None:
                 quote = realtime_quote or {}
+                # Note: IV and IV Rank require historical IV data and are not available
+                # from real-time price feeds. These would need to be calculated separately
+                # from option chain data or a dedicated IV calculation service.
                 return MarketData(
                     spot_price=round(realtime_ltp, 2),
-                    iv=round(np.random.uniform(0.12, 0.22), 4),  # IV still simulated
-                    iv_rank=round(np.random.uniform(40, 85), 1),  # IV rank still simulated
+                    iv=round(np.random.uniform(0.12, 0.22), 4),  # TODO: Integrate with IV service
+                    iv_rank=round(np.random.uniform(40, 85), 1),  # TODO: Integrate with IV service
                     bid=round(quote.get('ltp', realtime_ltp) - np.random.uniform(0.5, 2), 2),
                     ask=round(quote.get('ltp', realtime_ltp) + np.random.uniform(0.5, 2), 2),
                     change=round(quote.get('change_pct', np.random.uniform(-1.5, 1.5)), 2),

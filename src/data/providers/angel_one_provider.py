@@ -219,19 +219,28 @@ class AngelOneDataProvider(DataProvider):
     def _on_tick(self, data: Dict[str, Any]) -> None:
         """Handle incoming tick data from WebSocket."""
         # Transform data if needed and notify callbacks
+        # Note: Angel One returns prices in paise (1/100 of rupee)
+        raw_ltp = data.get('last_traded_price', 0)
+        ltp = data.get('ltp', raw_ltp / 100 if raw_ltp else None)
+        
         tick_data = {
             'token': str(data.get('token', '')),
-            'ltp': data.get('ltp', data.get('last_traded_price', 0) / 100),
+            'ltp': ltp,
             'volume': data.get('volume_trade_for_the_day', 0),
             'timestamp': data.get('timestamp'),
         }
         
-        # Add quote data if available
+        # Add quote data if available (convert from paise to rupees)
         if 'open_price_of_the_day' in data:
-            tick_data['open'] = data.get('open_price_of_the_day', 0) / 100
-            tick_data['high'] = data.get('high_price_of_the_day', 0) / 100
-            tick_data['low'] = data.get('low_price_of_the_day', 0) / 100
-            tick_data['close'] = data.get('closed_price', 0) / 100
+            open_price = data.get('open_price_of_the_day', 0)
+            high_price = data.get('high_price_of_the_day', 0)
+            low_price = data.get('low_price_of_the_day', 0)
+            close_price = data.get('closed_price', 0)
+            
+            tick_data['open'] = open_price / 100 if open_price else None
+            tick_data['high'] = high_price / 100 if high_price else None
+            tick_data['low'] = low_price / 100 if low_price else None
+            tick_data['close'] = close_price / 100 if close_price else None
         
         self._notify_tick(tick_data)
     
