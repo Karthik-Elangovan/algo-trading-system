@@ -30,6 +30,11 @@ env:
   AWS_REGION: ap-south-1
   PROJECT_NAME: algo-trading
 
+# Restrict permissions for the GITHUB_TOKEN
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   # Run tests before deployment
   test:
