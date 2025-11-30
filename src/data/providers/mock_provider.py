@@ -28,9 +28,9 @@ class MockDataProvider(DataProvider):
     
     # Default base prices for common instruments
     DEFAULT_BASE_PRICES = {
-        'NIFTY': 19250.0,
-        'BANKNIFTY': 43500.0,
-        'SENSEX': 64800.0,
+        'NIFTY': 24200.0,
+        'BANKNIFTY': 52000.0,
+        'SENSEX': 80000.0,
     }
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):

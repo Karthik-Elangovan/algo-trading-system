@@ -462,12 +462,12 @@ class DashboardDataHandler:
         
         # Fall back to simulated data
         base_prices = {
-            "NIFTY": 19250,
-            "BANKNIFTY": 43500,
-            "SENSEX": 64800,
+            "NIFTY": 24200,
+            "BANKNIFTY": 52000,
+            "SENSEX": 80000,
         }
         
-        base_price = base_prices.get(underlying, 19250)
+        base_price = base_prices.get(underlying, 24200)
         
         # Add some randomness to simulate live data
         noise = np.random.normal(0, base_price * PRICE_NOISE_FACTOR)

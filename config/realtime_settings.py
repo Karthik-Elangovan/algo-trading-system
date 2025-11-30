@@ -41,10 +41,10 @@ MOCK_PROVIDER_CONFIG: Dict[str, Any] = {
     
     # Base prices for common instruments
     'base_prices': {
-        'NIFTY': 19250.0,
-        'BANKNIFTY': 43500.0,
-        'SENSEX': 64800.0,
-        'FINNIFTY': 18500.0,
+        'NIFTY': 24200.0,
+        'BANKNIFTY': 52000.0,
+        'SENSEX': 80000.0,
+        'FINNIFTY': 23500.0,
     },
     
     # Whether to simulate market hours
