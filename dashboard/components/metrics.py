@@ -22,6 +22,32 @@ DRAWDOWN_WARNING_THRESHOLD = 5  # Drawdown % above this shows indicator
 DRAWDOWN_DANGER_THRESHOLD = 10  # Drawdown % above this shows warning color
 
 
+def format_compact_number(value: float, currency: bool = True, decimals: int = 1) -> str:
+    """
+    Format a number in compact form (K for thousands, L for lakhs, Cr for crores).
+    
+    Args:
+        value: The number to format
+        currency: Whether to prefix with currency symbol (₹)
+        decimals: Number of decimal places
+        
+    Returns:
+        Compact formatted string
+    """
+    prefix = "₹" if currency else ""
+    abs_value = abs(value)
+    sign = "-" if value < 0 else ""
+    
+    if abs_value >= 10000000:  # 1 crore
+        return f"{sign}{prefix}{abs_value/10000000:.{decimals}f}Cr"
+    elif abs_value >= 100000:  # 1 lakh
+        return f"{sign}{prefix}{abs_value/100000:.{decimals}f}L"
+    elif abs_value >= 1000:  # 1 thousand
+        return f"{sign}{prefix}{abs_value/1000:.{decimals}f}K"
+    else:
+        return f"{sign}{prefix}{abs_value:,.{decimals}f}"
+
+
 def render_risk_metrics(risk_metrics: Any) -> None:
     """
     Render a risk metrics display panel.
@@ -40,7 +66,7 @@ def render_risk_metrics(risk_metrics: Any) -> None:
         var_value = risk_metrics.var_95 if hasattr(risk_metrics, 'var_95') else risk_metrics.get('var_95', 0)
         st.metric(
             "VaR (95%)",
-            f"₹{var_value:,.0f}",
+            format_compact_number(var_value, currency=True, decimals=0),
             help="Maximum expected loss at 95% confidence level"
         )
     
@@ -48,8 +74,8 @@ def render_risk_metrics(risk_metrics: Any) -> None:
         margin = risk_metrics.margin_used if hasattr(risk_metrics, 'margin_used') else risk_metrics.get('margin_used', 0)
         delta = "⚠️" if margin > MARGIN_DANGER_THRESHOLD else ("🟡" if margin > MARGIN_WARNING_THRESHOLD else "✅")
         st.metric(
-            "Margin Used",
-            f"{margin:.1f}%",
+            "Margin",
+            f"{margin:.0f}%",
             delta=delta,
             delta_color="off",
             help="Percentage of available margin in use"
@@ -59,7 +85,7 @@ def render_risk_metrics(risk_metrics: Any) -> None:
         exposure = risk_metrics.max_exposure if hasattr(risk_metrics, 'max_exposure') else risk_metrics.get('max_exposure', 0)
         st.metric(
             "Exposure",
-            f"₹{exposure:,.0f}",
+            format_compact_number(exposure, currency=True, decimals=0),
             help="Total portfolio exposure"
         )
     
@@ -82,9 +108,9 @@ def render_risk_metrics(risk_metrics: Any) -> None:
         daily_pnl = risk_metrics.daily_pnl if hasattr(risk_metrics, 'daily_pnl') else risk_metrics.get('daily_pnl', 0)
         pnl_color = colors["profit_color"] if daily_pnl >= 0 else colors["loss_color"]
         st.markdown(
-            f"<div style='text-align: center;'>"
+            f"<div style='text-align: center; overflow: hidden;'>"
             f"<p style='margin-bottom: 0; color: {colors['secondary']};'>Daily P&L</p>"
-            f"<p style='font-size: 1.5rem; font-weight: bold; color: {pnl_color};'>₹{daily_pnl:,.2f}</p>"
+            f"<p style='font-size: 1.25rem; font-weight: bold; color: {pnl_color}; white-space: nowrap;'>{format_compact_number(daily_pnl)}</p>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -93,9 +119,9 @@ def render_risk_metrics(risk_metrics: Any) -> None:
         total_pnl = risk_metrics.total_pnl if hasattr(risk_metrics, 'total_pnl') else risk_metrics.get('total_pnl', 0)
         pnl_color = colors["profit_color"] if total_pnl >= 0 else colors["loss_color"]
         st.markdown(
-            f"<div style='text-align: center;'>"
+            f"<div style='text-align: center; overflow: hidden;'>"
             f"<p style='margin-bottom: 0; color: {colors['secondary']};'>Total P&L</p>"
-            f"<p style='font-size: 1.5rem; font-weight: bold; color: {pnl_color};'>₹{total_pnl:,.2f}</p>"
+            f"<p style='font-size: 1.25rem; font-weight: bold; color: {pnl_color}; white-space: nowrap;'>{format_compact_number(total_pnl)}</p>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -103,9 +129,9 @@ def render_risk_metrics(risk_metrics: Any) -> None:
     with col3:
         cvar = risk_metrics.cvar_95 if hasattr(risk_metrics, 'cvar_95') else risk_metrics.get('cvar_95', 0)
         st.markdown(
-            f"<div style='text-align: center;'>"
+            f"<div style='text-align: center; overflow: hidden;'>"
             f"<p style='margin-bottom: 0; color: {colors['secondary']};'>CVaR (95%)</p>"
-            f"<p style='font-size: 1.5rem; font-weight: bold; color: {colors['loss_color']};'>₹{cvar:,.2f}</p>"
+            f"<p style='font-size: 1.25rem; font-weight: bold; color: {colors['loss_color']}; white-space: nowrap;'>{format_compact_number(cvar)}</p>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -126,7 +152,7 @@ def render_risk_metrics(risk_metrics: Any) -> None:
     with col3:
         theta = risk_metrics.theta_exposure if hasattr(risk_metrics, 'theta_exposure') else risk_metrics.get('theta_exposure', 0)
         theta_color = colors["profit_color"] if theta < 0 else colors["loss_color"]  # Negative theta is good for sellers
-        st.metric("Theta", f"₹{theta:,.2f}", help="Daily theta decay (positive = collecting)")
+        st.metric("Theta", format_compact_number(theta), help="Daily theta decay")
     
     with col4:
         vega = risk_metrics.vega_exposure if hasattr(risk_metrics, 'vega_exposure') else risk_metrics.get('vega_exposure', 0)
@@ -382,26 +408,26 @@ def render_capital_metrics(
     
     with col1:
         st.metric(
-            "Initial Capital",
-            f"₹{initial_capital:,.0f}",
+            "Initial",
+            format_compact_number(initial_capital, currency=True, decimals=0),
         )
     
     with col2:
         st.metric(
-            "Current Capital",
-            f"₹{current_capital:,.0f}",
-            delta=f"{return_pct:+.2f}%",
+            "Current",
+            format_compact_number(current_capital, currency=True, decimals=0),
+            delta=f"{return_pct:+.1f}%",
         )
     
     with col3:
         available = current_capital * (1 - margin_used / 100)
         st.metric(
             "Available",
-            f"₹{available:,.0f}",
+            format_compact_number(available, currency=True, decimals=0),
         )
     
     # Margin bar
-    st.markdown("**Margin Utilization**")
+    st.markdown("**Margin**")
     
     # Create a progress bar
     margin_color = (
@@ -411,4 +437,4 @@ def render_capital_metrics(
     )
     
     st.progress(min(margin_used / 100, 1.0))
-    st.caption(f"Margin Used: {margin_used:.1f}% | Free: {100 - margin_used:.1f}%")
+    st.caption(f"Used: {margin_used:.0f}% | Free: {100 - margin_used:.0f}%")

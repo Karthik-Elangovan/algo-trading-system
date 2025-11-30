@@ -259,10 +259,24 @@ def get_custom_css() -> str:
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         
-        /* Responsive adjustments */
-        @media (max-width: 768px) {{
+        /* Metric overflow handling */
+        .metric-value {{
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        
+        /* Responsive adjustments for medium screens */
+        @media (max-width: 1024px) {{
             .metric-value {{
                 font-size: 1.25rem;
+            }}
+        }}
+        
+        /* Responsive adjustments for small screens */
+        @media (max-width: 768px) {{
+            .metric-value {{
+                font-size: 1.1rem;
             }}
             
             .metric-card {{

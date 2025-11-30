@@ -48,6 +48,7 @@ from dashboard.components.metrics import (
     render_market_data,
     render_order_entry,
     render_capital_metrics,
+    format_compact_number,
 )
 from dashboard.components.alerts import (
     AlertManager,
@@ -114,7 +115,7 @@ def main():
     st.title("📈 Algo Trading Dashboard")
     
     # Auto-refresh toggle in header
-    col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
+    col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
     
     with col1:
         st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -172,11 +173,11 @@ def main():
     
     # Main content tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 P&L & Charts",
-        "📋 Positions",
-        "⚠️ Risk Metrics",
-        "📝 Order Entry",
-        "🔔 Alerts"
+        "P&L",
+        "Positions",
+        "Risk",
+        "Orders",
+        "Alerts"
     ])
     
     with tab1:
@@ -269,11 +270,11 @@ def render_positions_tab(data_handler):
             st.markdown("#### Net Greeks")
             col_a, col_b = st.columns(2)
             with col_a:
-                st.metric("Net Delta", f"{total_delta:,.4f}")
-                st.metric("Net Gamma", f"{total_gamma:,.6f}")
+                st.metric("Delta", f"{total_delta:,.4f}")
+                st.metric("Gamma", f"{total_gamma:,.6f}")
             with col_b:
-                st.metric("Net Theta", f"₹{total_theta:,.2f}/day")
-                st.metric("Net Vega", f"{total_vega:,.2f}")
+                st.metric("Theta/day", format_compact_number(total_theta))
+                st.metric("Vega", f"{total_vega:,.2f}")
 
 
 def render_risk_tab(data_handler):
@@ -289,24 +290,26 @@ def render_risk_tab(data_handler):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("**Position Limits**")
+        st.markdown("**Positions**")
         positions = data_handler.get_positions()
         max_positions = 5
         st.progress(len(positions) / max_positions)
-        st.caption(f"Positions: {len(positions)} / {max_positions}")
+        st.caption(f"{len(positions)}/{max_positions}")
     
     with col2:
-        st.markdown("**Daily Loss Limit**")
+        st.markdown("**Daily Loss**")
         daily_limit = 50000
         daily_loss = max(0, -risk_metrics.daily_pnl)
         st.progress(min(daily_loss / daily_limit, 1.0))
-        st.caption(f"Loss: ₹{daily_loss:,.0f} / ₹{daily_limit:,.0f}")
+        loss_str = format_compact_number(daily_loss, decimals=0)
+        limit_str = format_compact_number(daily_limit, decimals=0)
+        st.caption(f"{loss_str}/{limit_str}")
     
     with col3:
-        st.markdown("**Margin Limit**")
+        st.markdown("**Margin**")
         margin_limit = 100
         st.progress(risk_metrics.margin_used / margin_limit)
-        st.caption(f"Margin: {risk_metrics.margin_used:.1f}% / {margin_limit}%")
+        st.caption(f"{risk_metrics.margin_used:.0f}%/{margin_limit}%")
     
     # Risk warnings
     st.markdown("---")
