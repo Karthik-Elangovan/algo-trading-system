@@ -89,8 +89,12 @@ class TradingScheduler:
         self._max_daily_loss_pct = self._config.get('max_daily_loss_pct', 0.05)
         self._timezone = self._config.get('timezone', 'Asia/Kolkata')
         
-        # Market hours
-        self._market_hours = MarketHours(timezone=self._timezone)
+        # Market hours - validate timezone
+        try:
+            self._market_hours = MarketHours(timezone=self._timezone)
+        except Exception as e:
+            logger.error(f"Invalid timezone '{self._timezone}': {e}")
+            raise ValueError(f"Invalid timezone: {self._timezone}") from e
         
         # Scheduler
         self._scheduler = BackgroundScheduler(
@@ -589,9 +593,31 @@ class TradingScheduler:
         
         Returns:
             True if can place order, False if rate limited
+        
+        Note:
+            This is a basic implementation that tracks orders in a sliding window.
+            For production use, consider using a token bucket algorithm for more
+            precise rate limiting.
         """
         max_orders_per_minute = self._config.get('max_orders_per_minute', 10)
-        # Simplified implementation - in production, track order timestamps
+        
+        # Track order timestamps in a sliding window
+        if not hasattr(self, '_order_timestamps'):
+            self._order_timestamps = []
+        
+        now = datetime.now()
+        one_minute_ago = now - timedelta(minutes=1)
+        
+        # Remove old timestamps
+        self._order_timestamps = [ts for ts in self._order_timestamps if ts > one_minute_ago]
+        
+        # Check if limit reached
+        if len(self._order_timestamps) >= max_orders_per_minute:
+            logger.warning(f"Rate limit reached: {len(self._order_timestamps)} orders in last minute")
+            return False
+        
+        # Add current timestamp
+        self._order_timestamps.append(now)
         return True
     
     def get_status(self) -> Dict[str, Any]:

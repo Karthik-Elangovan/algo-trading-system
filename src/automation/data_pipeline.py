@@ -271,11 +271,24 @@ class DataPipeline:
         """Fetch real-time data for all symbols."""
         if not self._data_provider:
             # Generate mock tick data for testing
+            # Use configurable base prices or reasonable defaults
+            mock_base_prices = self._config.get('mock_base_prices', {
+                'NIFTY': 19250.0,
+                'BANKNIFTY': 43500.0,
+                'SENSEX': 64800.0,
+            })
+            default_price = self._config.get('mock_default_price', 10000.0)
+            
             for symbol in self._symbols:
+                base_price = mock_base_prices.get(symbol, default_price)
+                # Add small random variation for more realistic mock data
+                import random
+                variation = base_price * random.uniform(-0.001, 0.001)
+                
                 self._on_tick({
                     'token': symbol,
-                    'ltp': 19250.0 + (hash(symbol) % 1000),
-                    'volume': 1000,
+                    'ltp': base_price + variation,
+                    'volume': random.randint(100, 10000),
                     'timestamp': datetime.now(),
                 })
             return
@@ -485,7 +498,15 @@ class DataPipeline:
         self._save_candle_data()
     
     def _save_tick_data(self) -> None:
-        """Save tick data to files."""
+        """
+        Save tick data to files.
+        
+        Note:
+            For high-frequency data with large volumes, consider:
+            - Using Parquet format for better compression and performance
+            - Implementing buffered writes to reduce I/O operations
+            - Using async I/O for non-blocking file operations
+        """
         today = datetime.now().strftime('%Y%m%d')
         
         with self._lock:

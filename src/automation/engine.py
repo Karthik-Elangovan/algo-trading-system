@@ -174,13 +174,25 @@ class AutomationEngine:
     
     def _setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown."""
+        # Use a flag to request shutdown rather than calling sys.exit directly
+        self._shutdown_requested = False
+        
         def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, initiating shutdown...")
-            self.stop()
-            sys.exit(0)
+            logger.info(f"Received signal {signum}, requesting shutdown...")
+            self._shutdown_requested = True
+            # Initiate graceful shutdown in a separate thread to avoid
+            # blocking the signal handler
+            shutdown_thread = threading.Thread(target=self._graceful_shutdown, daemon=True)
+            shutdown_thread.start()
         
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
+    
+    def _graceful_shutdown(self) -> None:
+        """Perform graceful shutdown of all components."""
+        logger.info("Performing graceful shutdown...")
+        self.stop()
+        logger.info("Graceful shutdown complete")
     
     def _set_state(self, state: EngineState) -> None:
         """Set engine state with thread safety."""
@@ -578,7 +590,8 @@ class AutomationEngine:
         """
         Run the engine forever until interrupted.
         
-        This method blocks and runs the engine until a signal is received.
+        This method blocks and runs the engine until a signal is received
+        or shutdown is requested.
         """
         if not self.start():
             logger.error("Failed to start engine")
@@ -587,9 +600,10 @@ class AutomationEngine:
         logger.info("Engine running. Press Ctrl+C to stop.")
         
         try:
-            while self.is_running or self.is_paused:
+            while (self.is_running or self.is_paused) and not self._shutdown_requested:
                 time.sleep(1)
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received")
         finally:
-            self.stop()
+            if not self._shutdown_requested:
+                self.stop()
