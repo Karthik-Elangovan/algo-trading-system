@@ -1,0 +1,212 @@
+{
+  "alarms": [
+    {
+      "name": "algo-trading-${ENVIRONMENT}-high-cpu",
+      "description": "ECS cluster CPU utilization is high",
+      "namespace": "AWS/ECS",
+      "metricName": "CPUUtilization",
+      "dimensions": {
+        "ClusterName": "algo-trading-${ENVIRONMENT}-cluster"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 80,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-critical-cpu",
+      "description": "ECS cluster CPU utilization is critical",
+      "namespace": "AWS/ECS",
+      "metricName": "CPUUtilization",
+      "dimensions": {
+        "ClusterName": "algo-trading-${ENVIRONMENT}-cluster"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 95,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "critical"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-high-memory",
+      "description": "ECS cluster memory utilization is high",
+      "namespace": "AWS/ECS",
+      "metricName": "MemoryUtilization",
+      "dimensions": {
+        "ClusterName": "algo-trading-${ENVIRONMENT}-cluster"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 80,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-trading-task-count",
+      "description": "Trading service has no running tasks",
+      "namespace": "ECS/ContainerInsights",
+      "metricName": "RunningTaskCount",
+      "dimensions": {
+        "ClusterName": "algo-trading-${ENVIRONMENT}-cluster",
+        "ServiceName": "algo-trading-${ENVIRONMENT}-trading"
+      },
+      "statistic": "Average",
+      "period": 60,
+      "evaluationPeriods": 3,
+      "threshold": 1,
+      "comparisonOperator": "LessThanThreshold",
+      "treatMissingData": "breaching",
+      "actionsEnabled": true,
+      "severity": "critical"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-alb-5xx-errors",
+      "description": "ALB is returning 5xx errors",
+      "namespace": "AWS/ApplicationELB",
+      "metricName": "HTTPCode_Target_5XX_Count",
+      "dimensions": {
+        "LoadBalancer": "algo-trading-${ENVIRONMENT}-alb"
+      },
+      "statistic": "Sum",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 10,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-alb-latency",
+      "description": "ALB response time is high",
+      "namespace": "AWS/ApplicationELB",
+      "metricName": "TargetResponseTime",
+      "dimensions": {
+        "LoadBalancer": "algo-trading-${ENVIRONMENT}-alb"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 3,
+      "threshold": 5,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-unhealthy-hosts",
+      "description": "ALB has unhealthy targets",
+      "namespace": "AWS/ApplicationELB",
+      "metricName": "UnHealthyHostCount",
+      "dimensions": {
+        "TargetGroup": "algo-trading-${ENVIRONMENT}-dashboard-tg",
+        "LoadBalancer": "algo-trading-${ENVIRONMENT}-alb"
+      },
+      "statistic": "Average",
+      "period": 60,
+      "evaluationPeriods": 3,
+      "threshold": 1,
+      "comparisonOperator": "GreaterThanOrEqualToThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-rds-cpu",
+      "description": "RDS CPU utilization is high",
+      "namespace": "AWS/RDS",
+      "metricName": "CPUUtilization",
+      "dimensions": {
+        "DBInstanceIdentifier": "algo-trading-${ENVIRONMENT}-db"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 80,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-rds-storage",
+      "description": "RDS free storage space is low",
+      "namespace": "AWS/RDS",
+      "metricName": "FreeStorageSpace",
+      "dimensions": {
+        "DBInstanceIdentifier": "algo-trading-${ENVIRONMENT}-db"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 5368709120,
+      "comparisonOperator": "LessThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-rds-connections",
+      "description": "RDS database connections are high",
+      "namespace": "AWS/RDS",
+      "metricName": "DatabaseConnections",
+      "dimensions": {
+        "DBInstanceIdentifier": "algo-trading-${ENVIRONMENT}-db"
+      },
+      "statistic": "Average",
+      "period": 300,
+      "evaluationPeriods": 2,
+      "threshold": 80,
+      "comparisonOperator": "GreaterThanThreshold",
+      "treatMissingData": "notBreaching",
+      "actionsEnabled": true,
+      "severity": "warning"
+    }
+  ],
+  "snsTopics": [
+    {
+      "name": "algo-trading-${ENVIRONMENT}-alerts",
+      "description": "SNS topic for Algo Trading System alerts"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-critical-alerts",
+      "description": "SNS topic for critical alerts requiring immediate action"
+    }
+  ],
+  "logMetricFilters": [
+    {
+      "name": "algo-trading-${ENVIRONMENT}-error-count",
+      "logGroupName": "/aws/ecs/algo-trading-${ENVIRONMENT}",
+      "filterPattern": "ERROR",
+      "metricName": "ErrorCount",
+      "metricNamespace": "AlgoTrading/${ENVIRONMENT}",
+      "metricValue": "1"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-trade-execution",
+      "logGroupName": "/aws/ecs/algo-trading-${ENVIRONMENT}",
+      "filterPattern": "[timestamp, level, thread, logger, message=\"*Trade executed*\"]",
+      "metricName": "TradeExecutionCount",
+      "metricNamespace": "AlgoTrading/${ENVIRONMENT}",
+      "metricValue": "1"
+    },
+    {
+      "name": "algo-trading-${ENVIRONMENT}-order-rejected",
+      "logGroupName": "/aws/ecs/algo-trading-${ENVIRONMENT}",
+      "filterPattern": "[timestamp, level, thread, logger, message=\"*Order rejected*\"]",
+      "metricName": "OrderRejectedCount",
+      "metricNamespace": "AlgoTrading/${ENVIRONMENT}",
+      "metricValue": "1"
+    }
+  ]
+}
