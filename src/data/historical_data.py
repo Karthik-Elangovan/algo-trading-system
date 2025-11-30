@@ -322,17 +322,17 @@ class HistoricalDataFetcher:
         """Get parameters for different underlyings."""
         params = {
             "NIFTY": {
-                "base_price": 18000,
+                "base_price": 24200,
                 "strike_interval": 50,
                 "base_iv": 0.15,
             },
             "BANKNIFTY": {
-                "base_price": 42000,
+                "base_price": 52000,
                 "strike_interval": 100,
                 "base_iv": 0.18,
             },
             "SENSEX": {
-                "base_price": 60000,
+                "base_price": 80000,
                 "strike_interval": 100,
                 "base_iv": 0.14,
             },
