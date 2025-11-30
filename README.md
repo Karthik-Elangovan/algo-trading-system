@@ -11,11 +11,11 @@
 
 ---
 
-An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Angel One broker integration (planned).
+A comprehensive algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Angel One broker integration and production-ready AWS deployment infrastructure.
 
 ## Features
 
-### Phase 1
+### Phase 1: Core Trading Engine
 - ✅ Historical data fetcher for options
 - ✅ IV Rank calculator with Black-Scholes model
 - ✅ Premium Selling Strategy (Short Strangle)
@@ -23,7 +23,7 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 - ✅ Comprehensive performance metrics
 - ✅ Transaction cost modeling (Indian markets)
 
-### Phase 2
+### Phase 2: Trading Dashboard
 - ✅ Professional Streamlit trading dashboard
 - ✅ Real-time P&L tracking and visualization
 - ✅ Position monitoring with Greeks exposure
@@ -33,16 +33,31 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 - ✅ Dark/Light theme support
 - ✅ Export functionality (CSV, reports)
 
-### Phase 4 (Current)
+### Phase 3: Angel One Broker Integration
+- ✅ Angel One SmartAPI integration
+- ✅ Authentication with TOTP support
+- ✅ Real-time market data via WebSocket
+- ✅ Order placement and management
+- ✅ Position and portfolio tracking
+- ✅ Paper trading simulator for testing
+- ✅ Risk management configuration
+
+### Phase 4: Advanced Trading Strategies
 - ✅ Iron Condor Strategy - Neutral strategy for range-bound markets
 - ✅ Calendar Spread Strategy - Time decay strategy for low IV environments
 - ✅ Ratio Spread Strategy - Directional strategy with premium collection
 - ✅ Comprehensive configuration for all strategies
-- ✅ Unit tests for all new strategies (54 tests)
-- ✅ Detailed documentation for Phase 4
+- ✅ Comprehensive unit test coverage for all strategies
+- ✅ Detailed documentation for each strategy
 
-### Future Phases
-- 📋 Phase 5: Angel One broker integration
+### Phase 6: Production Deployment
+- ✅ Docker containerization (Trading, Dashboard, Data services)
+- ✅ Terraform AWS infrastructure (VPC, ECS, RDS, S3)
+- ✅ CI/CD pipeline with GitHub Actions
+- ✅ CloudWatch monitoring and alerting
+- ✅ Multi-environment support (dev, staging, prod)
+- ✅ Deployment scripts and rollback procedures
+- ✅ Comprehensive deployment documentation
 
 ## Installation
 
@@ -93,53 +108,94 @@ print(f"Max Drawdown: {results.max_drawdown:.2%}")
 
 ```
 algo-trading-system/
-├── src/
-│   ├── data/              # Market data modules
-│   │   ├── historical_data.py
-│   │   └── data_utils.py
-│   ├── strategies/        # Strategy implementations
-│   │   ├── base_strategy.py
-│   │   ├── premium_selling.py
-│   │   ├── iron_condor.py      # Phase 4 - Iron Condor Strategy
-│   │   ├── calendar_spread.py  # Phase 4 - Calendar Spread Strategy
-│   │   └── ratio_spread.py     # Phase 4 - Ratio Spread Strategy
-│   ├── risk/              # Risk management
-│   │   └── position_sizing.py
-│   ├── execution/         # Broker integration (Future)
-│   ├── backtesting/       # Backtesting engine
-│   │   ├── engine.py
-│   │   ├── metrics.py
-│   │   └── report.py
-│   ├── indicators/        # Technical indicators
-│   │   └── volatility.py
-│   └── ui/                # Legacy UI module
-├── dashboard/             # Streamlit Trading Dashboard (Phase 2)
-│   ├── app.py             # Main dashboard application
-│   ├── components/        # UI components
-│   │   ├── sidebar.py     # Sidebar controls
-│   │   ├── charts.py      # P&L and chart components
-│   │   ├── tables.py      # Position and order tables
-│   │   ├── metrics.py     # Risk and market metrics
-│   │   └── alerts.py      # Alert system
-│   ├── utils/             # Utility modules
+├── .github/
+│   └── workflows/
+│       └── deploy.yml         # CI/CD pipeline
+├── config/
+│   ├── settings.py            # Strategy configurations
+│   ├── broker_settings.py     # Broker configurations
+│   └── deployment.py          # Deployment settings
+├── dashboard/                 # Streamlit Trading Dashboard (Phase 2)
+│   ├── app.py                 # Main dashboard application
+│   ├── components/            # UI components
+│   │   ├── sidebar.py         # Sidebar controls
+│   │   ├── charts.py          # P&L and chart components
+│   │   ├── tables.py          # Position and order tables
+│   │   ├── metrics.py         # Risk and market metrics
+│   │   └── alerts.py          # Alert system
+│   ├── utils/                 # Utility modules
 │   │   ├── data_handler.py
 │   │   ├── export.py
 │   │   └── theme.py
-│   └── styles/            # Custom CSS
+│   └── styles/                # Custom CSS
 │       └── custom.css
-├── config/
-│   └── settings.py        # Configuration (includes Phase 4 configs)
-├── tests/
-│   ├── test_iv_rank.py
-│   ├── test_backtesting.py
-│   ├── test_premium_selling.py
-│   ├── test_iron_condor.py      # Phase 4 tests
-│   ├── test_calendar_spread.py  # Phase 4 tests
-│   └── test_ratio_spread.py     # Phase 4 tests
+├── data/                      # Data storage
+├── deployment/                # Production Deployment (Phase 6)
+│   ├── docker/                # Dockerfiles
+│   │   ├── Dockerfile.trading
+│   │   ├── Dockerfile.dashboard
+│   │   ├── Dockerfile.data
+│   │   └── docker-compose.yml
+│   ├── terraform/             # AWS infrastructure
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── environments/
+│   │   └── modules/           # VPC, ECS, RDS, S3
+│   ├── scripts/               # Deployment scripts
+│   │   ├── deploy.sh
+│   │   ├── rollback.sh
+│   │   └── health_check.sh
+│   ├── monitoring/            # CloudWatch configs
+│   │   ├── alerts.json
+│   │   └── cloudwatch_dashboards.json
+│   └── docs/                  # Deployment documentation
+│       ├── ARCHITECTURE.md
+│       ├── DEPLOYMENT.md
+│       └── RUNBOOK.md
 ├── docs/
 │   ├── PHASE1_README.md
-│   └── PHASE4_README.md         # Phase 4 documentation
-├── data/                  # Data storage
+│   └── PHASE4_README.md
+├── src/
+│   ├── backtesting/           # Backtesting engine
+│   │   ├── engine.py
+│   │   ├── metrics.py
+│   │   └── report.py
+│   ├── data/                  # Market data modules
+│   │   ├── historical_data.py
+│   │   └── data_utils.py
+│   ├── execution/             # Broker integration (Phase 3)
+│   │   ├── broker.py          # Broker factory
+│   │   ├── paper_broker.py    # Paper trading simulator
+│   │   ├── utils.py           # Order utilities
+│   │   └── angel_one/         # Angel One integration
+│   │       ├── auth.py        # Authentication
+│   │       ├── orders.py      # Order management
+│   │       ├── positions.py   # Position tracking
+│   │       ├── market_data.py # Market data
+│   │       ├── websocket.py   # Real-time data
+│   │       ├── account.py     # Account info
+│   │       └── live_broker.py # Live broker
+│   ├── indicators/            # Technical indicators
+│   │   └── volatility.py
+│   ├── risk/                  # Risk management
+│   │   └── position_sizing.py
+│   ├── strategies/            # Trading strategies
+│   │   ├── base_strategy.py
+│   │   ├── premium_selling.py
+│   │   ├── iron_condor.py
+│   │   ├── calendar_spread.py
+│   │   └── ratio_spread.py
+│   └── ui/                    # Legacy UI module
+├── tests/
+│   ├── test_backtesting.py
+│   ├── test_broker.py
+│   ├── test_calendar_spread.py
+│   ├── test_dashboard.py
+│   ├── test_iron_condor.py
+│   ├── test_iv_rank.py
+│   ├── test_premium_selling.py
+│   └── test_ratio_spread.py
 ├── requirements.txt
 └── README.md
 ```
@@ -251,6 +307,171 @@ The dashboard can be customized via the sidebar:
 - **Auto-refresh**: Enable/disable automatic data refresh (30-second default)
 - **Theme**: Toggle between dark and light modes
 
+## Broker Integration
+
+The system supports both paper trading and live trading with Angel One broker.
+
+### Paper Trading (Default)
+
+Paper trading is enabled by default for safe testing:
+
+```python
+from src.execution.broker import BrokerFactory
+
+# Create a paper broker
+broker = BrokerFactory.create(mode="paper", initial_capital=1_000_000)
+
+# Login (no credentials required for paper trading)
+broker.login()
+
+# Place a test order
+order_id = broker.place_order(
+    symbol="NIFTY24DEC22000CE",
+    quantity=50,
+    order_type="MARKET",
+    transaction_type="BUY"
+)
+
+# Check positions
+positions = broker.get_positions()
+print(positions)
+```
+
+### Live Trading with Angel One
+
+For live trading, set up your credentials:
+
+```bash
+# Set environment variables (never commit credentials!)
+# Use .env files with proper .gitignore entries, or use a secrets manager
+export ANGEL_ONE_API_KEY="your-api-key"
+export ANGEL_ONE_CLIENT_ID="your-client-id"
+export ANGEL_ONE_PASSWORD="your-password"
+export ANGEL_ONE_TOTP_SECRET="your-totp-secret"
+```
+
+> ⚠️ **Security Warning**: Never commit credentials to version control. Use environment variables, `.env` files (added to `.gitignore`), or a secrets manager like AWS Secrets Manager.
+
+```python
+from src.execution.broker import BrokerFactory
+
+# Create a live broker
+broker = BrokerFactory.create(mode="live")
+
+# Login with TOTP
+broker.login()
+
+# Subscribe to market data
+broker.subscribe_market_data(["NIFTY", "BANKNIFTY"])
+
+# Place orders
+order_id = broker.place_order(
+    symbol="NIFTY24DEC22000CE",
+    quantity=50,
+    order_type="LIMIT",
+    transaction_type="BUY",
+    price=150.0
+)
+```
+
+### Broker Configuration
+
+Configure broker settings in `config/broker_settings.py`:
+
+```python
+BROKER_RISK_CONFIG = {
+    "max_order_value": 500_000,      # 5 Lakhs max per order
+    "max_daily_loss": 50_000,        # 50K daily loss limit
+    "max_daily_trades": 100,
+    "max_positions": 10,
+}
+```
+
+## Production Deployment
+
+The system includes complete AWS deployment infrastructure.
+
+### Quick Deploy
+
+```bash
+# Deploy to development
+./deployment/scripts/deploy.sh dev
+
+# Deploy to staging
+./deployment/scripts/deploy.sh staging
+
+# Deploy to production
+./deployment/scripts/deploy.sh prod
+```
+
+### Docker Compose (Local)
+
+```bash
+# Start all services locally
+cd deployment/docker
+docker-compose up -d
+
+# Access the dashboard
+open http://localhost:8501
+```
+
+### AWS Infrastructure
+
+The Terraform configuration provisions:
+
+- **VPC**: Secure network with public/private subnets
+- **ECS**: Fargate-based container orchestration
+- **RDS**: PostgreSQL database for trade storage
+- **S3**: Data lake for market data and backups
+- **CloudWatch**: Monitoring dashboards and alerts
+- **ALB**: Application load balancer with HTTPS
+
+### Terraform Deployment
+
+```bash
+cd deployment/terraform
+
+# Initialize
+terraform init
+
+# Plan for development
+terraform plan -var-file=environments/dev.tfvars
+
+# Apply
+terraform apply -var-file=environments/dev.tfvars
+```
+
+### CI/CD Pipeline
+
+GitHub Actions workflow automatically:
+
+1. Runs tests on every push
+2. Builds Docker images
+3. Pushes to Amazon ECR
+4. Deploys to ECS
+5. Runs health checks
+
+### Monitoring
+
+Access CloudWatch dashboards for:
+
+- Container CPU/Memory utilization
+- Application latency and errors
+- Database connections
+- Trading metrics
+
+### Rollback
+
+```bash
+# Rollback to previous version
+./deployment/scripts/rollback.sh dev
+
+# Rollback to specific revision
+./deployment/scripts/rollback.sh prod --to-revision 5
+```
+
+See [deployment/docs/DEPLOYMENT.md](deployment/docs/DEPLOYMENT.md) for detailed deployment instructions.
+
 ## Testing
 
 ```bash
@@ -292,6 +513,11 @@ Call = S×N(d1) - K×e^(-rT)×N(d2)
 - seaborn>=0.12.0
 - pytest>=7.0.0
 - python-dateutil>=2.8.0
+- streamlit>=1.29.0
+- plotly>=5.18.0
+- smartapi-python>=1.3.0
+- pyotp>=2.8.0
+- websocket-client>=1.5.0
 
 ## License
 
@@ -307,9 +533,11 @@ MIT License - See LICENSE file for details.
 
 ## Documentation
 
-See [docs/PHASE1_README.md](docs/PHASE1_README.md) for detailed Phase 1 documentation.
-
-See [docs/PHASE4_README.md](docs/PHASE4_README.md) for Phase 4 strategies documentation (Iron Condor, Calendar Spread, Ratio Spread).
+- [docs/PHASE1_README.md](docs/PHASE1_README.md) - Phase 1 documentation (Core trading engine)
+- [docs/PHASE4_README.md](docs/PHASE4_README.md) - Phase 4 documentation (Iron Condor, Calendar Spread, Ratio Spread)
+- [deployment/docs/DEPLOYMENT.md](deployment/docs/DEPLOYMENT.md) - Deployment guide
+- [deployment/docs/ARCHITECTURE.md](deployment/docs/ARCHITECTURE.md) - System architecture
+- [deployment/docs/RUNBOOK.md](deployment/docs/RUNBOOK.md) - Operations runbook
 
 ---
 
