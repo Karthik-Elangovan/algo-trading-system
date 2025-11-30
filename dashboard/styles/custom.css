@@ -150,6 +150,24 @@
     overflow: hidden;
 }
 
+/* Header row spacing and alignment */
+[data-testid="stHorizontalBlock"] {
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Prevent checkbox label overflow */
+.stCheckbox label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Fix selectbox width */
+.stSelectbox {
+    min-width: 100px;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .main .block-container {
@@ -172,6 +190,11 @@
     .stColumn {
         width: 100% !important;
         flex: 1 1 100% !important;
+        min-width: 120px;
+    }
+    
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap;
     }
 }
 
