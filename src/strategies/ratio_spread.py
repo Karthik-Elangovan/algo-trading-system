@@ -686,7 +686,9 @@ class RatioSpreadStrategy(BaseStrategy):
         # Calculate number of ratio spreads
         num_spreads = int(max_risk / estimated_risk)
         
-        return max(1, min(num_spreads, 2))  # Cap at 2 due to high risk
+        # Cap at max_positions due to high risk nature of ratio spreads
+        max_positions = self.config.get("max_positions", 2)
+        return max(1, min(num_spreads, max_positions))
     
     def open_ratio_spread(
         self,

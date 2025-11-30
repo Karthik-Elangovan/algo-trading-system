@@ -414,7 +414,8 @@ class CalendarSpreadStrategy(BaseStrategy):
         # Calculate net debit (pay for far, receive for near)
         net_debit = far_call["ltp"] - near_call["ltp"]
         
-        if net_debit <= 0:
+        # Use small tolerance for floating-point comparison
+        if net_debit < 0.01:
             return None  # Should be a debit trade
         
         near_dte = (near_expiry - pd.to_datetime(timestamp)).days
