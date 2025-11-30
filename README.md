@@ -23,7 +23,7 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 - ✅ Comprehensive performance metrics
 - ✅ Transaction cost modeling (Indian markets)
 
-### Phase 2 (Current)
+### Phase 2
 - ✅ Professional Streamlit trading dashboard
 - ✅ Real-time P&L tracking and visualization
 - ✅ Position monitoring with Greeks exposure
@@ -33,9 +33,16 @@ An algorithmic trading system for Nifty, Bank Nifty, and Sensex options with Ang
 - ✅ Dark/Light theme support
 - ✅ Export functionality (CSV, reports)
 
+### Phase 4 (Current)
+- ✅ Iron Condor Strategy - Neutral strategy for range-bound markets
+- ✅ Calendar Spread Strategy - Time decay strategy for low IV environments
+- ✅ Ratio Spread Strategy - Directional strategy with premium collection
+- ✅ Comprehensive configuration for all strategies
+- ✅ Unit tests for all new strategies (54 tests)
+- ✅ Detailed documentation for Phase 4
+
 ### Future Phases
-- 📋 Phase 3: Additional strategies (Iron Condor, Calendar Spreads)
-- 📋 Phase 4: Angel One broker integration
+- 📋 Phase 5: Angel One broker integration
 
 ## Installation
 
@@ -92,10 +99,13 @@ algo-trading-system/
 │   │   └── data_utils.py
 │   ├── strategies/        # Strategy implementations
 │   │   ├── base_strategy.py
-│   │   └── premium_selling.py
+│   │   ├── premium_selling.py
+│   │   ├── iron_condor.py      # Phase 4 - Iron Condor Strategy
+│   │   ├── calendar_spread.py  # Phase 4 - Calendar Spread Strategy
+│   │   └── ratio_spread.py     # Phase 4 - Ratio Spread Strategy
 │   ├── risk/              # Risk management
 │   │   └── position_sizing.py
-│   ├── execution/         # Broker integration (Phase 3)
+│   ├── execution/         # Broker integration (Future)
 │   ├── backtesting/       # Backtesting engine
 │   │   ├── engine.py
 │   │   ├── metrics.py
@@ -118,13 +128,17 @@ algo-trading-system/
 │   └── styles/            # Custom CSS
 │       └── custom.css
 ├── config/
-│   └── settings.py        # Configuration
+│   └── settings.py        # Configuration (includes Phase 4 configs)
 ├── tests/
 │   ├── test_iv_rank.py
 │   ├── test_backtesting.py
-│   └── test_premium_selling.py
+│   ├── test_premium_selling.py
+│   ├── test_iron_condor.py      # Phase 4 tests
+│   ├── test_calendar_spread.py  # Phase 4 tests
+│   └── test_ratio_spread.py     # Phase 4 tests
 ├── docs/
-│   └── PHASE1_README.md
+│   ├── PHASE1_README.md
+│   └── PHASE4_README.md         # Phase 4 documentation
 ├── data/                  # Data storage
 ├── requirements.txt
 └── README.md
@@ -294,6 +308,8 @@ MIT License - See LICENSE file for details.
 ## Documentation
 
 See [docs/PHASE1_README.md](docs/PHASE1_README.md) for detailed Phase 1 documentation.
+
+See [docs/PHASE4_README.md](docs/PHASE4_README.md) for Phase 4 strategies documentation (Iron Condor, Calendar Spread, Ratio Spread).
 
 ---
 
