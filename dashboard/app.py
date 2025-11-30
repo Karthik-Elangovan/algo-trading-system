@@ -114,13 +114,18 @@ def main():
     st.title("📈 Algo Trading Dashboard")
     
     # Auto-refresh toggle in header
-    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+    col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
     
     with col1:
         st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     with col2:
-        auto_refresh = st.checkbox("Auto-refresh", value=st.session_state.auto_refresh, key="auto_refresh_toggle")
+        auto_refresh = st.checkbox(
+            "Auto-refresh",
+            value=st.session_state.auto_refresh,
+            key="auto_refresh_toggle",
+            label_visibility="collapsed"
+        )
         st.session_state.auto_refresh = auto_refresh
     
     with col3:
