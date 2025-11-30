@@ -452,5 +452,60 @@ class TestRiskMetrics:
         assert metrics.drawdown == 0.0
 
 
+class TestFormatCompactNumber:
+    """Tests for format_compact_number helper function."""
+    
+    def test_small_numbers(self):
+        """Test formatting small numbers (< 1000)."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(500) == "₹500.0"
+        assert format_compact_number(999.5) == "₹999.5"
+        assert format_compact_number(0) == "₹0.0"
+    
+    def test_thousands(self):
+        """Test formatting thousands (1K to 99.9K)."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(1000) == "₹1.0K"
+        assert format_compact_number(50000) == "₹50.0K"
+        assert format_compact_number(99000) == "₹99.0K"
+    
+    def test_lakhs(self):
+        """Test formatting lakhs (1L to 99.9L)."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(100000) == "₹1.0L"
+        assert format_compact_number(1500000) == "₹15.0L"
+    
+    def test_crores(self):
+        """Test formatting crores (1Cr+)."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(10000000) == "₹1.0Cr"
+        assert format_compact_number(50000000) == "₹5.0Cr"
+    
+    def test_negative_numbers(self):
+        """Test formatting negative numbers."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(-5000) == "-₹5.0K"
+        assert format_compact_number(-100000) == "-₹1.0L"
+    
+    def test_without_currency(self):
+        """Test formatting without currency symbol."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(5000, currency=False) == "5.0K"
+        assert format_compact_number(100000, currency=False) == "1.0L"
+    
+    def test_custom_decimals(self):
+        """Test formatting with custom decimal places."""
+        from dashboard.components.metrics import format_compact_number
+        
+        assert format_compact_number(5000, decimals=2) == "₹5.00K"
+        assert format_compact_number(5000, decimals=0) == "₹5K"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

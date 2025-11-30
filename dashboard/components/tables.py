@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional, Callable
 from datetime import datetime
 
 from ..utils.theme import ThemeManager
+from .metrics import format_compact_number
 
 
 def render_position_table(
@@ -80,11 +81,13 @@ def render_position_table(
     with col1:
         st.metric("Positions", len(positions))
     with col2:
-        st.metric("Total P&L", f"₹{total_pnl:,.2f}", delta=f"{'↑' if total_pnl >= 0 else '↓'}")
+        pnl_display = format_compact_number(total_pnl, currency=True, decimals=1)
+        st.metric("P&L", pnl_display, delta=f"{'↑' if total_pnl >= 0 else '↓'}")
     with col3:
-        st.metric("Net Delta", f"{total_delta:,.4f}")
+        st.metric("Delta", f"{total_delta:,.4f}")
     with col4:
-        st.metric("Daily Theta", f"₹{total_theta:,.2f}")
+        theta_display = format_compact_number(total_theta, currency=True, decimals=1)
+        st.metric("Theta", theta_display)
     
     # Display the table with custom styling
     st.dataframe(
