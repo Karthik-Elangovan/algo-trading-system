@@ -70,24 +70,29 @@ class AngelOneBroker(BaseBroker):
     
     def get_historical_data(self, symbol: str, exchange: str, interval: str,
                            from_date: datetime, to_date: datetime) -> List[Dict[str, Any]]:
+        logger.warning("get_historical_data not fully implemented")
         return []
     
     def place_order(self, symbol: str, exchange: str, transaction_type: str, quantity: int,
                    order_type: str = "MARKET", product_type: str = "INTRADAY",
                    price: float = 0.0, trigger_price: float = 0.0, variety: str = "NORMAL",
                    symbol_token: str = "") -> str:
-        return ""
+        """Place an order - requires full implementation before production use."""
+        raise NotImplementedError(
+            "AngelOneBroker.place_order requires complete implementation. "
+            "Use PaperBroker for testing or implement full SmartAPI integration."
+        )
     
     def modify_order(self, order_id: str, quantity: Optional[int] = None,
                     price: Optional[float] = None, trigger_price: Optional[float] = None,
                     order_type: Optional[str] = None) -> bool:
-        return False
+        raise NotImplementedError("AngelOneBroker.modify_order requires implementation")
     
     def cancel_order(self, order_id: str, variety: str = "NORMAL") -> bool:
-        return False
+        raise NotImplementedError("AngelOneBroker.cancel_order requires implementation")
     
     def get_order_status(self, order_id: str) -> Order:
-        raise RuntimeError("Not implemented")
+        raise NotImplementedError("AngelOneBroker.get_order_status requires implementation")
     
     def get_order_history(self) -> List[Order]:
         return []

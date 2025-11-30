@@ -110,7 +110,18 @@ def parse_option_symbol(symbol: str) -> Optional[Dict[str, Any]]:
         'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
     }
     try:
-        expiry = datetime(year=2000 + int(year), month=month_map[month], day=1)
+        # Find last Thursday of the month (typical expiry day for Indian options)
+        year_full = 2000 + int(year)
+        month_num = month_map[month]
+        # Start from the end of month and go backwards to find last Thursday
+        if month_num == 12:
+            next_month = datetime(year_full + 1, 1, 1)
+        else:
+            next_month = datetime(year_full, month_num + 1, 1)
+        last_day = next_month - timedelta(days=1)
+        # Find last Thursday (weekday 3)
+        days_since_thursday = (last_day.weekday() - 3) % 7
+        expiry = last_day - timedelta(days=days_since_thursday)
     except (ValueError, KeyError):
         return None
     return {
