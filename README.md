@@ -47,7 +47,7 @@ A comprehensive algorithmic trading system for Nifty, Bank Nifty, and Sensex opt
 - ✅ Calendar Spread Strategy - Time decay strategy for low IV environments
 - ✅ Ratio Spread Strategy - Directional strategy with premium collection
 - ✅ Comprehensive configuration for all strategies
-- ✅ Unit tests for all strategies (201 total tests)
+- ✅ Comprehensive unit test coverage for all strategies
 - ✅ Detailed documentation for each strategy
 
 ### Phase 6: Production Deployment
@@ -343,11 +343,14 @@ For live trading, set up your credentials:
 
 ```bash
 # Set environment variables (never commit credentials!)
+# Use .env files with proper .gitignore entries, or use a secrets manager
 export ANGEL_ONE_API_KEY="your-api-key"
 export ANGEL_ONE_CLIENT_ID="your-client-id"
 export ANGEL_ONE_PASSWORD="your-password"
 export ANGEL_ONE_TOTP_SECRET="your-totp-secret"
 ```
+
+> ⚠️ **Security Warning**: Never commit credentials to version control. Use environment variables, `.env` files (added to `.gitignore`), or a secrets manager like AWS Secrets Manager.
 
 ```python
 from src.execution.broker import BrokerFactory
