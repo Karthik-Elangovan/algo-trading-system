@@ -1,0 +1,368 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'config/**'
+      - 'deployment/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      skip_tests:
+        description: 'Skip tests before deployment'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AWS_REGION: ap-south-1
+  PROJECT_NAME: algo-trading
+
+# Restrict permissions for the GITHUB_TOKEN
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # Run tests before deployment
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+
+  # Build Docker images
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    
+    outputs:
+      trading_image: ${{ steps.build-push.outputs.trading_image }}
+      dashboard_image: ${{ steps.build-push.outputs.dashboard_image }}
+      data_image: ${{ steps.build-push.outputs.data_image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        id: build-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ENVIRONMENT: ${{ steps.set-env.outputs.ENVIRONMENT }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build and push trading image
+          TRADING_IMAGE="${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-trading:${IMAGE_TAG}"
+          docker build -f deployment/docker/Dockerfile.trading -t $TRADING_IMAGE .
+          docker push $TRADING_IMAGE
+          docker tag $TRADING_IMAGE "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-trading:latest"
+          docker push "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-trading:latest"
+          echo "trading_image=$TRADING_IMAGE" >> $GITHUB_OUTPUT
+
+          # Build and push dashboard image
+          DASHBOARD_IMAGE="${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-dashboard:${IMAGE_TAG}"
+          docker build -f deployment/docker/Dockerfile.dashboard -t $DASHBOARD_IMAGE .
+          docker push $DASHBOARD_IMAGE
+          docker tag $DASHBOARD_IMAGE "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-dashboard:latest"
+          docker push "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-dashboard:latest"
+          echo "dashboard_image=$DASHBOARD_IMAGE" >> $GITHUB_OUTPUT
+
+          # Build and push data service image
+          DATA_IMAGE="${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-data-service:${IMAGE_TAG}"
+          docker build -f deployment/docker/Dockerfile.data -t $DATA_IMAGE .
+          docker push $DATA_IMAGE
+          docker tag $DATA_IMAGE "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-data-service:latest"
+          docker push "${ECR_REGISTRY}/${PROJECT_NAME}-${ENVIRONMENT}-data-service:latest"
+          echo "data_image=$DATA_IMAGE" >> $GITHUB_OUTPUT
+
+  # Deploy to development
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: |
+      always() && 
+      needs.build.result == 'success' && 
+      (github.event.inputs.environment == 'dev' || github.event_name == 'push')
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS services
+        run: |
+          CLUSTER="${PROJECT_NAME}-dev-cluster"
+          
+          # Update trading service
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-dev-trading \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+          
+          # Update dashboard service
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-dev-dashboard \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+          
+          # Update data service
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-dev-data-service \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+
+      - name: Wait for deployment
+        run: |
+          CLUSTER="${PROJECT_NAME}-dev-cluster"
+          
+          echo "Waiting for services to stabilize..."
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services ${PROJECT_NAME}-dev-trading \
+            --region $AWS_REGION || echo "Service may still be deploying"
+
+      - name: Run health checks
+        run: |
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh dev || echo "Health check completed with warnings"
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, deploy-dev]
+    if: |
+      always() && 
+      needs.build.result == 'success' && 
+      github.event.inputs.environment == 'staging'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS services
+        run: |
+          CLUSTER="${PROJECT_NAME}-staging-cluster"
+          
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-staging-trading \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+          
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-staging-dashboard \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+          
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-staging-data-service \
+            --force-new-deployment \
+            --region $AWS_REGION || true
+
+      - name: Wait for deployment
+        run: |
+          CLUSTER="${PROJECT_NAME}-staging-cluster"
+          
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services ${PROJECT_NAME}-staging-trading \
+            --region $AWS_REGION || echo "Service may still be deploying"
+
+      - name: Run health checks
+        run: |
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh staging
+
+  # Deploy to production (requires approval)
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: |
+      always() && 
+      needs.build.result == 'success' && 
+      github.event.inputs.environment == 'prod'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create deployment record
+        run: |
+          echo "Deployment started at $(date)"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+
+      - name: Update ECS services
+        run: |
+          CLUSTER="${PROJECT_NAME}-prod-cluster"
+          
+          # Rolling deployment for production
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-prod-trading \
+            --force-new-deployment \
+            --deployment-configuration "maximumPercent=200,minimumHealthyPercent=100" \
+            --region $AWS_REGION
+          
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-prod-dashboard \
+            --force-new-deployment \
+            --deployment-configuration "maximumPercent=200,minimumHealthyPercent=100" \
+            --region $AWS_REGION
+          
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service ${PROJECT_NAME}-prod-data-service \
+            --force-new-deployment \
+            --deployment-configuration "maximumPercent=200,minimumHealthyPercent=100" \
+            --region $AWS_REGION
+
+      - name: Wait for deployment
+        run: |
+          CLUSTER="${PROJECT_NAME}-prod-cluster"
+          
+          echo "Waiting for production services to stabilize..."
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services ${PROJECT_NAME}-prod-trading ${PROJECT_NAME}-prod-dashboard \
+            --region $AWS_REGION
+
+      - name: Run health checks
+        run: |
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh prod
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Production deployment successful!"
+          echo "Commit: ${{ github.sha }}"
+          echo "Time: $(date)"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Production deployment failed!"
+          echo "Commit: ${{ github.sha }}"
+          echo "Please check logs and consider rollback"
+
+  # Rollback job (manual trigger only)
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && failure()
+    needs: [deploy-prod]
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Rollback services
+        run: |
+          chmod +x deployment/scripts/rollback.sh
+          ./deployment/scripts/rollback.sh ${{ github.event.inputs.environment }}
+
+      - name: Verify rollback
+        run: |
+          chmod +x deployment/scripts/health_check.sh
+          ./deployment/scripts/health_check.sh ${{ github.event.inputs.environment }}

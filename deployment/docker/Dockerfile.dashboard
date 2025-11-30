@@ -1,0 +1,89 @@
+# Multi-stage Dockerfile for Streamlit Dashboard
+# Optimized for production deployment
+
+# ============================================
+# Stage 1: Builder
+# ============================================
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir streamlit
+
+# ============================================
+# Stage 2: Production
+# ============================================
+FROM python:3.12-slim AS production
+
+# Security: Run as non-root user
+RUN groupadd -r dashboard && useradd -r -g dashboard dashboard
+
+WORKDIR /app
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY --chown=dashboard:dashboard src/ ./src/
+COPY --chown=dashboard:dashboard config/ ./config/
+COPY --chown=dashboard:dashboard requirements.txt .
+
+# Create necessary directories
+RUN mkdir -p /app/data /app/logs && \
+    chown -R dashboard:dashboard /app/data /app/logs
+
+# Streamlit configuration
+RUN mkdir -p /app/.streamlit && \
+    echo '[server]' > /app/.streamlit/config.toml && \
+    echo 'port = 8501' >> /app/.streamlit/config.toml && \
+    echo 'address = "0.0.0.0"' >> /app/.streamlit/config.toml && \
+    echo 'headless = true' >> /app/.streamlit/config.toml && \
+    echo 'enableCORS = false' >> /app/.streamlit/config.toml && \
+    echo 'enableXsrfProtection = true' >> /app/.streamlit/config.toml && \
+    echo '' >> /app/.streamlit/config.toml && \
+    echo '[browser]' >> /app/.streamlit/config.toml && \
+    echo 'gatherUsageStats = false' >> /app/.streamlit/config.toml && \
+    echo '' >> /app/.streamlit/config.toml && \
+    echo '[theme]' >> /app/.streamlit/config.toml && \
+    echo 'primaryColor = "#1E88E5"' >> /app/.streamlit/config.toml && \
+    echo 'backgroundColor = "#FFFFFF"' >> /app/.streamlit/config.toml && \
+    echo 'secondaryBackgroundColor = "#F0F2F6"' >> /app/.streamlit/config.toml && \
+    echo 'textColor = "#262730"' >> /app/.streamlit/config.toml && \
+    chown -R dashboard:dashboard /app/.streamlit
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    STREAMLIT_SERVER_PORT=8501 \
+    STREAMLIT_SERVER_HEADLESS=true \
+    LOG_LEVEL=INFO \
+    ENVIRONMENT=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Switch to non-root user
+USER dashboard
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Default command - run Streamlit dashboard
+CMD ["streamlit", "run", "src/ui/dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]

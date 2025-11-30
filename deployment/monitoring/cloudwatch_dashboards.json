@@ -1,0 +1,274 @@
+{
+  "dashboardName": "AlgoTradingSystem",
+  "description": "CloudWatch dashboard for Algo Trading System monitoring",
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Algo Trading System Dashboard\n**Environment**: ${ENVIRONMENT} | **Region**: ${AWS_REGION}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS CPU Utilization",
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ClusterName", "algo-trading-${ENVIRONMENT}-cluster", "ServiceName", "algo-trading-${ENVIRONMENT}-trading"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-dashboard"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-data-service"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS Memory Utilization",
+        "metrics": [
+          ["AWS/ECS", "MemoryUtilization", "ClusterName", "algo-trading-${ENVIRONMENT}-cluster", "ServiceName", "algo-trading-${ENVIRONMENT}-trading"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-dashboard"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-data-service"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 1,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Running Tasks",
+        "metrics": [
+          ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", "algo-trading-${ENVIRONMENT}-cluster", "ServiceName", "algo-trading-${ENVIRONMENT}-trading"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-dashboard"],
+          [".", ".", ".", ".", ".", "algo-trading-${ENVIRONMENT}-data-service"]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 7,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "ALB Request Count",
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "algo-trading-${ENVIRONMENT}-alb"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 7,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "ALB Response Time",
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "algo-trading-${ENVIRONMENT}-alb"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 13,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ALB HTTP 5xx Errors",
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "algo-trading-${ENVIRONMENT}-alb"],
+          [".", "HTTPCode_ELB_5XX_Count", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 13,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ALB HTTP 4xx Errors",
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "algo-trading-${ENVIRONMENT}-alb"],
+          [".", "HTTPCode_ELB_4XX_Count", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 13,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Healthy Hosts",
+        "metrics": [
+          ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", "algo-trading-${ENVIRONMENT}-dashboard-tg", "LoadBalancer", "algo-trading-${ENVIRONMENT}-alb"],
+          [".", "UnHealthyHostCount", ".", ".", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 19,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "RDS CPU Utilization",
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "algo-trading-${ENVIRONMENT}-db"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 19,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "RDS Database Connections",
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "algo-trading-${ENVIRONMENT}-db"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 25,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Free Storage Space",
+        "metrics": [
+          ["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", "algo-trading-${ENVIRONMENT}-db"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 300,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 25,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Read/Write IOPS",
+        "metrics": [
+          ["AWS/RDS", "ReadIOPS", "DBInstanceIdentifier", "algo-trading-${ENVIRONMENT}-db"],
+          [".", "WriteIOPS", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 25,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Read/Write Latency",
+        "metrics": [
+          ["AWS/RDS", "ReadLatency", "DBInstanceIdentifier", "algo-trading-${ENVIRONMENT}-db"],
+          [".", "WriteLatency", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${AWS_REGION}",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 31,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "title": "Application Logs - Errors",
+        "query": "SOURCE '/aws/ecs/algo-trading-${ENVIRONMENT}' | fields @timestamp, @message | filter @message like /ERROR/ | sort @timestamp desc | limit 50",
+        "region": "${AWS_REGION}",
+        "view": "table"
+      }
+    }
+  ]
+}
