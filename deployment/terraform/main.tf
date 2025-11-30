@@ -157,9 +157,6 @@ resource "aws_secretsmanager_secret_version" "api_credentials" {
     # ANGEL_ONE_TOTP_SECRET = ""
   })
 
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
 }
 
 # =============================================================================
