@@ -48,6 +48,7 @@ from dashboard.components.metrics import (
     render_market_data,
     render_order_entry,
     render_capital_metrics,
+    format_compact_number,
 )
 from dashboard.components.alerts import (
     AlertManager,
@@ -272,9 +273,7 @@ def render_positions_tab(data_handler):
                 st.metric("Delta", f"{total_delta:,.4f}")
                 st.metric("Gamma", f"{total_gamma:,.6f}")
             with col_b:
-                # Use compact format for theta
-                theta_display = f"₹{total_theta/1000:.1f}K" if abs(total_theta) >= 1000 else f"₹{total_theta:.0f}"
-                st.metric("Theta/day", theta_display)
+                st.metric("Theta/day", format_compact_number(total_theta))
                 st.metric("Vega", f"{total_vega:,.2f}")
 
 
@@ -302,9 +301,8 @@ def render_risk_tab(data_handler):
         daily_limit = 50000
         daily_loss = max(0, -risk_metrics.daily_pnl)
         st.progress(min(daily_loss / daily_limit, 1.0))
-        # Use compact format
-        loss_str = f"₹{daily_loss/1000:.0f}K" if daily_loss >= 1000 else f"₹{daily_loss:.0f}"
-        limit_str = f"₹{daily_limit/1000:.0f}K"
+        loss_str = format_compact_number(daily_loss, decimals=0)
+        limit_str = format_compact_number(daily_limit, decimals=0)
         st.caption(f"{loss_str}/{limit_str}")
     
     with col3:
